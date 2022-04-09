@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import CallbackContext, Dispatcher
+from telegram.ext import Dispatcher, CallbackContext
 from telegram.ext import Filters, MessageHandler
 
 

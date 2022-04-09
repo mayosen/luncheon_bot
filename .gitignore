@@ -17,4 +17,4 @@ venv.bak/
 
 # Project
 config.py
-*.sqlite3
+database.sqlite3
