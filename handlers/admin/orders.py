@@ -12,4 +12,5 @@ def admin_echo(update: Update, context: CallbackContext):
 
 
 def register(dp: Dispatcher):
-    dp.add_handler(MessageHandler(is_admin, admin_echo))
+    # dp.add_handler(MessageHandler(is_admin, admin_echo))
+    pass
