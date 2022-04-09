@@ -38,5 +38,13 @@ class Order(BaseModel):
     feedback_attachments = pw.TextField()
 
 
+class Product(BaseModel):
+    id = pw.AutoField()
+    category = pw.CharField()
+    title = pw.CharField()
+    price = pw.IntegerField()
+
+
 if __name__ == "__main__":
-    db.create_tables([User, Order])
+    # Приходится менять название на "database.sqlite3"
+    db.create_tables([User, Order, Product])
