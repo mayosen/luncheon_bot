@@ -20,11 +20,10 @@ class User(BaseModel):
 
 class Order(BaseModel):
     id = pw.AutoField()
-    status = pw.CharField(default="В обработке")
+    status = pw.CharField()
     user = pw.ForeignKeyField(User, backref="orders", on_delete="CASCADE")
     address = pw.CharField()
     phone = pw.CharField()
-    products = pw.CharField()
     rate = pw.IntegerField(default=0)
     feedback = pw.TextField()
     feedback_attachments = pw.TextField()
@@ -35,7 +34,14 @@ class Product(BaseModel):
     category = pw.CharField()
     title = pw.CharField()
     price = pw.IntegerField()
-    photo = pw.CharField()          # Telegram photo file_id
+    photo = pw.CharField()
 
 
-db.create_tables([User, Order, Product])
+class OrderItem(BaseModel):
+    id = pw.AutoField()
+    order_id = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
+    product_item = pw.ForeignKeyField(Product, on_delete="CASCADE")
+
+
+
+db.create_tables([User, Order, Product, OrderItem])

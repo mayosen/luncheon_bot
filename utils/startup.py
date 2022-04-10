@@ -7,7 +7,7 @@ from config import ADMINS
 def set_default_commands(updater: Updater):
     updater.bot.set_my_commands(
         [
-            BotCommand("order", "Новый заказ"),
+            BotCommand("order", "Сделать заказ"),
             BotCommand("me", "Ваш профиль"),
         ]
     )
