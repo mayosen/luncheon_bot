@@ -60,4 +60,3 @@ def register(dp: Dispatcher):
 
     dp.add_handler(order)
     # TODO: По окончании заказа чистить `user_data`
-

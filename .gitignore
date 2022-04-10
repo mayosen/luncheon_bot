@@ -18,3 +18,4 @@ venv.bak/
 # Project
 config.py
 database.sqlite3
+*.txt
