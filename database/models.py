@@ -43,4 +43,4 @@ class Product(BaseModel):
     category = pw.CharField()
     title = pw.CharField()
     price = pw.IntegerField()
-    photo = pw.CharField()  # tg file_id
+    photo = pw.CharField()
