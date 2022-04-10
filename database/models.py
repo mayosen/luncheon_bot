@@ -33,7 +33,7 @@ class Order(BaseModel):
     address = pw.CharField()
     phone = pw.CharField()
     products = pw.CharField()
-    rate = pw.IntegerField()
+    rate = pw.IntegerField(default=0)
     feedback = pw.TextField()
     feedback_attachments = pw.TextField()
 
