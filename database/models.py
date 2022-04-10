@@ -43,8 +43,4 @@ class Product(BaseModel):
     category = pw.CharField()
     title = pw.CharField()
     price = pw.IntegerField()
-
-
-if __name__ == "__main__":
-    # Приходится менять название на "database.sqlite3"
-    db.create_tables([User, Order, Product])
+    photo = pw.CharField()  # tg file_id
