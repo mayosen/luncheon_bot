@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
+def get_product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(
@@ -39,3 +39,39 @@ def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
         ]
 
     return InlineKeyboardMarkup(buttons)
+
+
+phone_keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(
+                text="Использовать прошлый номер",
+                callback_data="last_phone",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="Ввести новый",
+                callback_data="new_phone",
+            ),
+        ]
+    ]
+)
+
+
+address_keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(
+                text="Использовать прошлый адрес",
+                callback_data="last_address",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="Ввести новый",
+                callback_data="new_address",
+            ),
+        ]
+    ]
+)
