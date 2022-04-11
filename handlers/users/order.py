@@ -1,7 +1,7 @@
 import re
 from typing import List
 
-from telegram import Update, InputMediaPhoto, MessageEntity, Message
+from telegram import Update, InputMediaPhoto, MessageEntity, Message, CallbackQuery
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
@@ -17,6 +17,7 @@ MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS = range(5)
 def make_order(update: Update, context: CallbackContext):
     message = update.message
     context.user_data["cart"] = []
+
     products: List[Product] = Product.select().where(Product.category == "main_dish")
     context.user_data["cache"] = products
 
@@ -59,60 +60,37 @@ def switch_product(update: Update, context: CallbackContext):
     )
 
 
-def get_main_dish(update: Update, context: CallbackContext):
-    query = update.callback_query
+def process_category(field: str, alias: str, query: CallbackQuery, user_data: dict):
     query.answer()
-    index = int(re.match(r"cart:(\d+)", query.data).groups()[0])
+    query.edit_message_reply_markup()
 
-    user_data = context.user_data
+    index = int(re.match(r"cart:(\d+)", query.data).groups()[0])
     products = user_data["cache"]
     user_data["cart"].append(products[index])
-    user_data["cache"] = []
 
-    query.message.edit_reply_markup()
-
-    message = query.message
-    products: List[Product] = Product.select().where(Product.category == "snack")
-    context.user_data["cache"] = products
+    products: List[Product] = Product.select().where(Product.category == field)
+    user_data["cache"] = products
 
     index = 0
     product = products[index]
 
-    message.reply_text("Выберите закуску.")
+    message = query.message
+    message.reply_text(f"Выберите {alias}.")
     message.reply_photo(
         photo=product.photo,
         caption=f"{product.title}\nЦена: {product.price}",
         reply_markup=get_product_keyboard(index, len(products)),
     )
+
+
+def get_main_dish(update: Update, context: CallbackContext):
+    process_category("snack", "закуску", update.callback_query, context.user_data)
 
     return SNACK
 
 
 def get_snack(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    index = int(re.match(r"cart:(\d+)", query.data).groups()[0])
-
-    user_data = context.user_data
-    products = user_data["cache"]
-    user_data["cart"].append(products[index])
-    user_data["cache"] = []
-
-    query.message.edit_reply_markup()
-
-    message = query.message
-    products: List[Product] = Product.select().where(Product.category == "drink")
-    context.user_data["cache"] = products
-
-    index = 0
-    product = products[index]
-
-    message.reply_text("Выберите напиток.")
-    message.reply_photo(
-        photo=product.photo,
-        caption=f"{product.title}\nЦена: {product.price}",
-        reply_markup=get_product_keyboard(index, len(products)),
-    )
+    process_category("drink", "напиток", update.callback_query, context.user_data)
 
     return DRINK
 
@@ -229,6 +207,8 @@ def get_address(update: Update, context: CallbackContext):
 
 def create_order(message: Message, user: User, user_data: dict):
     # TODO: Создание заказа
+    # Писать его номер.
+    # Тут надо уведомлять админов
 
     message.reply_text(f"Спасибо! Ваш заказ по адресу\n<code>{user.address}</code>\nпринят в обработку.")
     user_data.clear()
