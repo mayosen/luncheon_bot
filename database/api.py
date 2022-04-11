@@ -34,3 +34,11 @@ def check_user(handler):
         return handler(update, context)
 
     return wrapper
+
+
+def user_phone():
+    pass
+
+
+def user_address():
+    pass
