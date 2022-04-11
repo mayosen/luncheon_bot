@@ -1,7 +1,7 @@
 import re
 from typing import List
 
-from telegram import Update, InputMediaPhoto, MessageEntity
+from telegram import Update, InputMediaPhoto, MessageEntity, Message
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
@@ -10,7 +10,7 @@ from database.models import User, Product, Order
 from keyboards.product import get_product_keyboard, phone_keyboard, address_keyboard
 
 
-MAIN_DISH, SNACK, DRINK, ADDRESS, PHONE = range(5)
+MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS = range(5)
 
 
 @check_user
@@ -135,7 +135,7 @@ def get_drink(update: Update, context: CallbackContext):
 
     if user.phone:
         message.reply_text(
-            text=f"В прошлом заказе вы указывали номер: <code>{user.phone}</code>\n"
+            text=f"В прошлом заказе вы указывали номер:\n<code>{user.phone}</code>\n"
                  f"Использовать его в в этом заказе?",
             reply_markup=phone_keyboard,
         )
@@ -167,16 +167,7 @@ def use_last_phone(update: Update, context: CallbackContext):
 
     user = User.get(id=query.from_user.id)
 
-    if user.address:
-        query.message.reply_text(
-            text=f"В прошлом заказе вы указывали адрес: <code>{user.address}</code>\n"
-                 f"Использовать его в в этом заказе?",
-            reply_markup=address_keyboard,
-        )
-    else:
-        query.message.reply_text("Введите адрес доставки или пришлите локацию.")
-
-    return ADDRESS
+    return to_address(query.message, user)
 
 
 def get_phone(update: Update, context: CallbackContext):
@@ -187,9 +178,13 @@ def get_phone(update: Update, context: CallbackContext):
     user.phone = phone
     user.save()
 
+    return to_address(message, user)
+
+
+def to_address(message: Message, user: User):
     if user.address:
         message.reply_text(
-            text=f"В прошлом заказе вы указывали адрес: <code>{user.address}</code>\n"
+            text=f"В прошлом заказе вы указывали адрес:\n<code>{user.address}</code>\n"
                  f"Использовать его в в этом заказе?",
             reply_markup=address_keyboard,
         )
@@ -212,15 +207,9 @@ def enter_new_address(update: Update, context: CallbackContext):
 def use_last_address(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
+    user = User.get(id=query.from_user.id)
 
-    address = User.get(id=query.from_user.id).address
-
-    # TODO: Создание заказа
-
-    query.message.reply_text(f"Спасибо! Ваш заказ по адресу <code>{address}</code> принят в обработку.")
-    context.user_data.clear()
-
-    return ConversationHandler.END
+    return create_order(query.message, user, context.user_data)
 
 
 def get_address(update: Update, context: CallbackContext):
@@ -235,10 +224,14 @@ def get_address(update: Update, context: CallbackContext):
     user.address = address
     user.save()
 
+    return create_order(message, user, context.user_data)
+
+
+def create_order(message: Message, user: User, user_data: dict):
     # TODO: Создание заказа
 
-    message.reply_text(f"Спасибо! Ваш заказ по адресу <code>{address}</code> принят в обработку.")
-    context.user_data.clear()
+    message.reply_text(f"Спасибо! Ваш заказ по адресу\n<code>{user.address}</code>\nпринят в обработку.")
+    user_data.clear()
 
     return ConversationHandler.END
 
