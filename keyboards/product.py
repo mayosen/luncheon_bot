@@ -1,8 +1,4 @@
-from typing import List
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
-from database.models import Product
 
 
 def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
@@ -19,25 +15,25 @@ def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
     if index == 0:
         buttons[1] = [
             InlineKeyboardButton(
-                text=">",
+                text=">>",
                 callback_data=f"index:{index + 1}"
             ),
         ]
     elif index == products_len - 1:
         buttons[1] = [
             InlineKeyboardButton(
-                text="<",
+                text="<<",
                 callback_data=f"index:{index - 1}"
             ),
         ]
     else:
         buttons[1] = [
             InlineKeyboardButton(
-                text="<",
+                text="<<",
                 callback_data=f"index:{index - 1}"
             ),
             InlineKeyboardButton(
-                text=">",
+                text=">>",
                 callback_data=f"index:{index + 1}"
             ),
         ]

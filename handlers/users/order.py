@@ -20,7 +20,8 @@ def make_order(update: Update, context: CallbackContext):
     products: List[Product] = Product.select().where(Product.category == "main_dish")
     context.user_data["cache"] = products
 
-    message.reply_text("Начата сборка заказа.\n/cancel - Отмена заказа\n\nВыберите основное блюдо.")
+    message.reply_text("Начата сборка заказа.\n/cancel - Отмена заказа\n\n"
+                       "Выберите основное блюдо.")
 
     index = 0
     product = products[index]
