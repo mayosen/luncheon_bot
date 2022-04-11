@@ -20,8 +20,8 @@ def make_order(update: Update, context: CallbackContext):
     products: List[Product] = Product.select().where(Product.category == "main_dish")
     context.user_data["cache"] = products
 
-    message.reply_text("Начата сборка заказа.\n/cancel - Отмена заказа\n\n"
-                       "Выберите основное блюдо.")
+    message.reply_text("Начата сборка заказа.\n/cancel - Отмена заказа")
+    message.reply_text("Выберите основное блюдо.")
 
     index = 0
     product = products[index]
@@ -78,7 +78,7 @@ def get_main_dish(update: Update, context: CallbackContext):
     index = 0
     product = products[index]
 
-    message.reply_text("Отлично. Теперь выберите закуску.")
+    message.reply_text("Выберите закуску.")
 
     message.reply_photo(
         photo=product.photo,
@@ -108,7 +108,7 @@ def get_snack(update: Update, context: CallbackContext):
     index = 0
     product = products[index]
 
-    message.reply_text("Спасибо. Теперь выберите напиток.")
+    message.reply_text("Выберите напиток.")
 
     message.reply_photo(
         photo=product.photo,
@@ -133,7 +133,7 @@ def get_drink(update: Update, context: CallbackContext):
 
     message = query.message
 
-    message.reply_text("Супер. Ваш заказ принят в обработку.")
+    message.reply_text("Спасибо. Ваш заказ принят в обработку.")
 
     # TODO: Запрос на юзера и создание заказа
 
@@ -150,10 +150,12 @@ def get_address():
 
 def register(dp: Dispatcher):
     order = ConversationHandler(
-        entry_points=[CommandHandler("order", make_order)],
+        entry_points=[
+            CommandHandler("order", make_order),
+            MessageHandler(Filters.regex(re.compile(r".*(новый|заказ).*", re.IGNORECASE)), make_order),
+        ],
         states={
             MAIN_DISH: [
-                MessageHandler(Filters.text & ~Filters.command, get_main_dish),
                 CallbackQueryHandler(pattern=r"^index:", callback=switch_product),
                 CallbackQueryHandler(pattern=r"^cart:", callback=get_main_dish),
             ],
@@ -172,7 +174,10 @@ def register(dp: Dispatcher):
 
             ],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[
+            CommandHandler("cancel", cancel),
+            MessageHandler(Filters.regex(re.compile(r".*(отмена|стоп).*", re.IGNORECASE)), cancel),
+        ],
     )
 
     dp.add_handler(order)
