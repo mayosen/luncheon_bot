@@ -5,38 +5,43 @@ def get_product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(
-                text="Добавить в корзину",
+                text="Продолжить",
+                callback_data="next_category",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="В корзину",
                 callback_data=f"cart:{index}"
             ),
-        ],
-        [],
+        ]
     ]
 
     if index == 0:
-        buttons[1] = [
+        buttons.append([
             InlineKeyboardButton(
-                text=">>",
+                text=">",
                 callback_data=f"index:{index + 1}"
             ),
-        ]
+        ])
     elif index == products_len - 1:
-        buttons[1] = [
+        buttons.append([
             InlineKeyboardButton(
-                text="<<",
+                text="<",
                 callback_data=f"index:{index - 1}"
             ),
-        ]
+        ])
     else:
-        buttons[1] = [
+        buttons.append([
             InlineKeyboardButton(
-                text="<<",
+                text="<",
                 callback_data=f"index:{index - 1}"
             ),
             InlineKeyboardButton(
-                text=">>",
+                text=">",
                 callback_data=f"index:{index + 1}"
             ),
-        ]
+        ])
 
     return InlineKeyboardMarkup(buttons)
 

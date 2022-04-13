@@ -83,6 +83,13 @@ def process_category(field: str, alias: str, query: CallbackQuery, user_data: di
     )
 
 
+def next_category(update: Update, context: CallbackContext):
+    pass
+
+    # TODO: Как узнать, какое следующее состояние?
+    # return STEP?
+
+
 def get_main_dish(update: Update, context: CallbackContext):
     process_category("snack", "закуску", update.callback_query, context.user_data)
 
@@ -188,7 +195,7 @@ def use_last_address(update: Update, context: CallbackContext):
     query.edit_message_reply_markup()
     user = User.get(id=query.from_user.id)
 
-    return validate_order(query.message, user, context.user_data)
+    return validate_order(query, user, context.user_data)
 
 
 def get_address(update: Update, context: CallbackContext):
@@ -213,12 +220,13 @@ def format_items(products: List[Product]):
     return f"Позиции меню:\n{positions}\nСумма: <b>{cost}</b> р."
 
 
-def validate_order(message: Message, user: User, user_data: dict):
+def validate_order(update: Union[Message, CallbackQuery], user: User, user_data: dict):
+    message = update if isinstance(update, Message) else update.message
     products: List[Product] = user_data["cart"]
     positions = format_items(products)
 
     text = (
-        f"Ваш заказ\n\n"
+        f"{update.from_user.full_name}, Ваш заказ\n\n"
         f"Телефон: <code>{user.phone}</code>\n"
         f"Адрес: <code>{user.address}</code>\n\n"
         f"{positions}"
@@ -235,8 +243,7 @@ def validate_order(message: Message, user: User, user_data: dict):
 def order_action(update: Update, context: CallbackContext):
     query = update.callback_query
     action = query.data
-    message = query.message
-    message.edit_reply_markup()
+    query.message.edit_reply_markup()
 
     if action == "user:confirm":
         return create_order(query, context.user_data)
