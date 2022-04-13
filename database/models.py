@@ -33,8 +33,19 @@ class Order(BaseModel):
     address = pw.CharField()
     phone = pw.CharField()
     rate = pw.IntegerField(default=0)
-    feedback = pw.TextField()
-    feedback_attachments = pw.TextField()
+    feedback = pw.TextField(default="")
+    feedback_attachments = pw.TextField(default="")
+
+    def __str__(self):
+        user = self.user
+        mention = f"@{user.username}\n" if user.username else f"{user.id}\n"
+
+        # TODO: Сделать полную информацию о заказе
+
+        return (
+            f"Заказ <code>#{self.id}</code>\n"
+            f"Пользователь: {mention}\n"
+        )
 
 
 class Product(BaseModel):

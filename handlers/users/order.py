@@ -6,7 +6,7 @@ from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
 from database.api import check_user
-from database.models import User, Product, Order
+from database.models import User, Product, Order, OrderItem
 from keyboards.product import get_product_keyboard, phone_keyboard, address_keyboard
 
 
@@ -206,12 +206,31 @@ def get_address(update: Update, context: CallbackContext):
 
 
 def create_order(message: Message, user: User, user_data: dict):
-    # TODO: Создание заказа
-    # Писать его номер.
-    # Тут надо уведомлять админов
+    order: Order = Order.create(
+        status="Подтверждение",
+        user=user,
+        address=User.address,
+        phone=User.phone,
+    )
 
-    message.reply_text(f"Спасибо! Ваш заказ по адресу\n<code>{user.address}</code>\nпринят в обработку.")
+    for product in user_data["cart"]:
+        OrderItem.create(
+            order_id=order,
+            product_item=product,
+        )
+
+    message.reply_text(f"Спасибо! Ваш заказ с номером <code>#{order.id}</code> принят в обработку.\n\n"
+                       f"Вам будут приходить уведомления об изменении его статуса.")
     user_data.clear()
+
+    admins: List[User] = User.select().where(User.status == "admin")
+    bot = message.bot
+
+    for admin in admins:
+        bot.send_message(
+            chat_id=admin.id,
+            text=str(order),
+        )
 
     return ConversationHandler.END
 

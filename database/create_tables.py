@@ -25,8 +25,8 @@ class Order(BaseModel):
     address = pw.CharField()
     phone = pw.CharField()
     rate = pw.IntegerField(default=0)
-    feedback = pw.TextField()
-    feedback_attachments = pw.TextField()
+    feedback = pw.TextField(default="")
+    feedback_attachments = pw.TextField(default="")
 
 
 class Product(BaseModel):
@@ -41,7 +41,6 @@ class OrderItem(BaseModel):
     id = pw.AutoField()
     order_id = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
     product_item = pw.ForeignKeyField(Product, on_delete="CASCADE")
-
 
 
 db.create_tables([User, Order, Product, OrderItem])

@@ -29,8 +29,9 @@ def get_products(update: Update, context: CallbackContext):
 
 def send_friends(update: Update, context: CallbackContext):
     friends: List[User] = User.select()
-    bot = context.bot
     for friend in friends:
+        # context.bot.send_message(chat_id=friend.id, text="Лох.")
+
         update.message.reply_text(
             f"Сообщение для пользователя @{friend.username if friend.username else friend.id} "
             f"отправлено."
