@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import Dispatcher, CallbackContext, Filters, CommandHandler
 from telegram.ext import MessageHandler
 
-from database.models import Product
+from database.models import Product, User
 from filters import is_admin
 
 
@@ -27,6 +27,17 @@ def get_products(update: Update, context: CallbackContext):
         )
 
 
+def send_friends(update: Update, context: CallbackContext):
+    friends: List[User] = User.select()
+    bot = context.bot
+    for friend in friends:
+        update.message.reply_text(
+            f"Сообщение для пользователя @{friend.username if friend.username else friend.id} "
+            f"отправлено."
+        )
+
+
 def register(dp: Dispatcher):
     dp.add_handler(CommandHandler("products", get_products, filters=is_admin))
+    dp.add_handler(CommandHandler("friends", send_friends, filters=is_admin))
     dp.add_handler(MessageHandler(Filters.photo & is_admin, get_photo))
