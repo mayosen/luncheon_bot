@@ -1,20 +1,20 @@
 import re
-from typing import List
+from typing import List, Union
 
 from telegram import Update, InputMediaPhoto, MessageEntity, Message, CallbackQuery
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
+import keyboards.order as keyboards
 from database.api import check_user
 from database.models import User, Product, Order, OrderItem
-from keyboards.product import get_product_keyboard, phone_keyboard, address_keyboard
 
 
-MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS = range(5)
+MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
 
 
 @check_user
-def make_order(update: Update, context: CallbackContext):
+def new_order(update: Union[Update, CallbackQuery], context: CallbackContext):
     message = update.message
     context.user_data["cart"] = []
 
@@ -30,13 +30,13 @@ def make_order(update: Update, context: CallbackContext):
     message.reply_photo(
         photo=product.photo,
         caption=f"{product.title}\nЦена: {product.price} р.",
-        reply_markup=get_product_keyboard(index, len(products)),
+        reply_markup=keyboards.get_product_keyboard(index, len(products)),
     )
 
     return MAIN_DISH
 
 
-def cancel(update: Update, context: CallbackContext):
+def cancel(update: Union[Update, CallbackQuery], context: CallbackContext):
     context.user_data.clear()
     update.message.reply_text("Заказ отменен. Ждем вас еще!")
 
@@ -56,7 +56,7 @@ def switch_product(update: Update, context: CallbackContext):
             media=product.photo,
             caption=f"{product.title}\nЦена: {product.price} р.",
         ),
-        reply_markup=get_product_keyboard(new_index, len(products)),
+        reply_markup=keyboards.get_product_keyboard(new_index, len(products)),
     )
 
 
@@ -79,7 +79,7 @@ def process_category(field: str, alias: str, query: CallbackQuery, user_data: di
     message.reply_photo(
         photo=product.photo,
         caption=f"{product.title}\nЦена: {product.price}",
-        reply_markup=get_product_keyboard(index, len(products)),
+        reply_markup=keyboards.get_product_keyboard(index, len(products)),
     )
 
 
@@ -115,7 +115,7 @@ def get_drink(update: Update, context: CallbackContext):
         message.reply_text(
             text=f"В прошлом заказе вы указывали номер:\n<code>{user.phone}</code>\n"
                  f"Использовать его в в этом заказе?",
-            reply_markup=phone_keyboard,
+            reply_markup=keyboards.phone_keyboard,
         )
     else:
         message.reply_text("Введите ваш номер телефона или отправьте контакт.")
@@ -133,7 +133,6 @@ def enter_new_phone(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
     query.message.reply_text("Введите новый номер телефона или отправьте контакт.")
-
     user = User.get(id=query.from_user.id)
     user.phone = ""
     user.save()
@@ -142,7 +141,6 @@ def enter_new_phone(update: Update, context: CallbackContext):
 def use_last_phone(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
-
     user = User.get(id=query.from_user.id)
 
     return to_address(query.message, user)
@@ -151,6 +149,9 @@ def use_last_phone(update: Update, context: CallbackContext):
 def get_phone(update: Update, context: CallbackContext):
     message = update.message
     phone = message.contact.phone_number if message.contact else message.text
+
+    if phone.startswith("7"):
+        phone = "+" + phone
 
     user = User.get(id=message.from_user.id)
     user.phone = phone
@@ -164,7 +165,7 @@ def to_address(message: Message, user: User):
         message.reply_text(
             text=f"В прошлом заказе вы указывали адрес:\n<code>{user.address}</code>\n"
                  f"Использовать его в в этом заказе?",
-            reply_markup=address_keyboard,
+            reply_markup=keyboards.address_keyboard,
         )
     else:
         message.reply_text("Введите адрес доставки или пришлите локацию.")
@@ -187,14 +188,14 @@ def use_last_address(update: Update, context: CallbackContext):
     query.edit_message_reply_markup()
     user = User.get(id=query.from_user.id)
 
-    return create_order(query.message, user, context.user_data)
+    return validate_order(query.message, user, context.user_data)
 
 
 def get_address(update: Update, context: CallbackContext):
     message = update.message
 
     if message.location:
-        address = f"{message.location.latitude} {message.location.longitude}"
+        address = f"{message.location.latitude}, {message.location.longitude}"
     else:
         address = message.text
 
@@ -202,10 +203,50 @@ def get_address(update: Update, context: CallbackContext):
     user.address = address
     user.save()
 
-    return create_order(message, user, context.user_data)
+    return validate_order(message, user, context.user_data)
 
 
-def create_order(message: Message, user: User, user_data: dict):
+def validate_order(message: Message, user: User, user_data: dict):
+    products: List[Product] = user_data["cart"]
+    positions = "".join([f"- {product}\n" for product in products])
+    cost = sum([product.price for product in products])
+
+    text = (
+        f"Ваш заказ\n\n"
+        f"Телефон: <code>{user.phone}</code>\n"
+        f"Адрес: <code>{user.address}</code>\n\n"
+        f"Позиции меню:\n"
+        f"{positions}\n"
+        f"Сумма: <b>{cost}</b> р."
+    )
+
+    message.reply_text(
+        text=text,
+        reply_markup=keyboards.order_action_keyboard,
+    )
+
+    return CONFIRM
+
+
+def order_action(update: Update, context: CallbackContext):
+    query = update.callback_query
+    action = query.data
+    message = query.message
+    message.edit_reply_markup()
+
+    if action == "user:confirm":
+        return create_order(query, context.user_data)
+    elif action == "user:reorder":
+        return new_order(query, context)
+    elif action == "user:cancel":
+        return cancel(query, context)
+
+    assert False
+
+
+def create_order(query: CallbackQuery, user_data: dict):
+    user = User.get(id=query.from_user.id)
+
     order: Order = Order.create(
         status="Подтверждение",
         user=user,
@@ -219,15 +260,15 @@ def create_order(message: Message, user: User, user_data: dict):
             product_item=product,
         )
 
+    message = query.message
     message.reply_text(f"Спасибо! Ваш заказ с номером <code>#{order.id}</code> принят в обработку.\n\n"
                        f"Вам будут приходить уведомления об изменении его статуса.")
     user_data.clear()
 
     admins: List[User] = User.select().where(User.status == "admin")
-    bot = message.bot
 
     for admin in admins:
-        bot.send_message(
+        message.bot.send_message(
             chat_id=admin.id,
             text=str(order),
         )
@@ -236,10 +277,10 @@ def create_order(message: Message, user: User, user_data: dict):
 
 
 def register(dp: Dispatcher):
-    order = ConversationHandler(
+    order_handler = ConversationHandler(
         entry_points=[
-            CommandHandler("order", make_order),
-            MessageHandler(Filters.regex(re.compile(r".*(новый|заказ).*", re.IGNORECASE)), make_order),
+            CommandHandler("order", new_order),
+            MessageHandler(Filters.regex(re.compile(r".*(новый|заказ).*", re.IGNORECASE)), new_order),
         ],
         states={
             MAIN_DISH: [
@@ -265,6 +306,9 @@ def register(dp: Dispatcher):
                 CallbackQueryHandler(pattern=r"^last_address?", callback=use_last_address),
                 CallbackQueryHandler(pattern=r"^new_address?", callback=enter_new_address),
             ],
+            CONFIRM: [
+                CallbackQueryHandler(pattern=r"user:(confirm|reorder|cancel)", callback=order_action),
+            ]
         },
         fallbacks=[
             CommandHandler("cancel", cancel),
@@ -272,4 +316,4 @@ def register(dp: Dispatcher):
         ],
     )
 
-    dp.add_handler(order)
+    dp.add_handler(order_handler)

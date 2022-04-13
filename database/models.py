@@ -55,6 +55,9 @@ class Product(BaseModel):
     price = pw.IntegerField()
     photo = pw.CharField()
 
+    def __str__(self):
+        return f"{self.title}, {self.price} р."
+
 
 class OrderItem(BaseModel):
     id = pw.AutoField()

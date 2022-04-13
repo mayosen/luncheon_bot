@@ -75,3 +75,26 @@ address_keyboard = InlineKeyboardMarkup(
         ]
     ]
 )
+
+order_action_keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(
+                text="Подтвердить заказ",
+                callback_data="user:confirm",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="Собрать заказ заново",
+                callback_data="user:reorder",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="Отменить заказ",
+                callback_data="user:cancel",
+            ),
+        ],
+    ]
+)
