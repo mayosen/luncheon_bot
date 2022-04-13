@@ -17,13 +17,16 @@ class User(BaseModel):
     address = pw.CharField(default="")
     phone = pw.CharField(default="")
 
+    # def __str__(self):
+    #     info = (f"{self.status}: {self.name}\n"
+    #             f"id: {self.id}\n"
+    #             f"username: {self.username}\n"
+    #             f"address: {self.address}\n"
+    #             f"phone: {self.phone}\n")
+    #     return info
+
     def __str__(self):
-        info = (f"{self.status}: {self.name}\n"
-                f"id: {self.id}\n"
-                f"username: {self.username}\n"
-                f"address: {self.address}\n"
-                f"phone: {self.phone}\n")
-        return info
+        return f"@{self.username}\n" if self.username else f"{self.id}\n"
 
 
 class Order(BaseModel):
@@ -37,14 +40,9 @@ class Order(BaseModel):
     feedback_attachments = pw.TextField(default="")
 
     def __str__(self):
-        user = self.user
-        mention = f"@{user.username}\n" if user.username else f"{user.id}\n"
-
-        # TODO: Сделать полную информацию о заказе
-
         return (
             f"Заказ <code>#{self.id}</code>\n"
-            f"Пользователь: {mention}\n"
+            f"Пользователь: {str(self.user)}\n"
         )
 
 

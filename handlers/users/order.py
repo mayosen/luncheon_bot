@@ -206,18 +206,22 @@ def get_address(update: Update, context: CallbackContext):
     return validate_order(message, user, context.user_data)
 
 
-def validate_order(message: Message, user: User, user_data: dict):
-    products: List[Product] = user_data["cart"]
+def format_items(products: List[Product]):
     positions = "".join([f"- {product}\n" for product in products])
     cost = sum([product.price for product in products])
+
+    return f"Позиции меню:\n{positions}\nСумма: <b>{cost}</b> р."
+
+
+def validate_order(message: Message, user: User, user_data: dict):
+    products: List[Product] = user_data["cart"]
+    positions = format_items(products)
 
     text = (
         f"Ваш заказ\n\n"
         f"Телефон: <code>{user.phone}</code>\n"
         f"Адрес: <code>{user.address}</code>\n\n"
-        f"Позиции меню:\n"
-        f"{positions}\n"
-        f"Сумма: <b>{cost}</b> р."
+        f"{positions}"
     )
 
     message.reply_text(
@@ -254,7 +258,8 @@ def create_order(query: CallbackQuery, user_data: dict):
         phone=User.phone,
     )
 
-    for product in user_data["cart"]:
+    products = user_data["cart"]
+    for product in products:
         OrderItem.create(
             order_id=order,
             product_item=product,
@@ -266,11 +271,20 @@ def create_order(query: CallbackQuery, user_data: dict):
     user_data.clear()
 
     admins: List[User] = User.select().where(User.status == "admin")
+    positions = format_items(products)
+    text = (
+        f"Новый заказ <code>#{order.id}</code>\n\n"
+        f"Пользователь: {str(user)}\n"
+        f"Телефон: <code>{user.phone}</code>\n"
+        f"Адрес: <code>{user.address}</code>\n\n"
+        f"{positions}"
+    )
 
     for admin in admins:
         message.bot.send_message(
             chat_id=admin.id,
-            text=str(order),
+            text=text,
+            reply_markup=None,  # TODO: markup
         )
 
     return ConversationHandler.END
