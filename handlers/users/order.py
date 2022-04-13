@@ -21,7 +21,7 @@ def make_order(update: Update, context: CallbackContext):
     products: List[Product] = Product.select().where(Product.category == "main_dish")
     context.user_data["cache"] = products
 
-    message.reply_text("Начата сборка заказа.\n/cancel - отменить заказ")
+    message.reply_text("Cборка заказа.\n/cancel - отменить заказ")
     message.reply_text("Выберите основное блюдо.")
 
     index = 0
@@ -29,7 +29,7 @@ def make_order(update: Update, context: CallbackContext):
 
     message.reply_photo(
         photo=product.photo,
-        caption=f"{product.title}\nЦена: {product.price}",
+        caption=f"{product.title}\nЦена: {product.price} р.",
         reply_markup=get_product_keyboard(index, len(products)),
     )
 
@@ -54,7 +54,7 @@ def switch_product(update: Update, context: CallbackContext):
     query.message.edit_media(
         media=InputMediaPhoto(
             media=product.photo,
-            caption=f"{product.title}\nЦена: {product.price}",
+            caption=f"{product.title}\nЦена: {product.price} р.",
         ),
         reply_markup=get_product_keyboard(new_index, len(products)),
     )
