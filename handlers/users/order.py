@@ -14,27 +14,33 @@ MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
 
 
 @check_user
-def new_order(update: Union[Update, CallbackQuery], context: CallbackContext):
+def new_order(update: Update, context: CallbackContext):
     user_data = context.user_data
     user_data["cart"] = []
 
-    update.message.reply_text(
+    if update.callback_query:
+        message = update.callback_query.message
+        to_process = update.callback_query
+    else:
+        message = update.message
+        to_process = update.message
+        
+    message.reply_text(
         "Сборка заказа:\n"
         "- основное блюдо\n"
         "- закуска\n"
         "- напиток\n\n"
         "/cancel - отменить заказ"
     )
-
-    to_process = update if isinstance(update, CallbackQuery) else update.message
     process_state(to_process, "main_dish", "основное блюдо", context.user_data)
 
     return MAIN_DISH
 
 
-def cancel(update: Union[Update, CallbackQuery], context: CallbackContext):
+def cancel(update: Update, context: CallbackContext):
     context.user_data.clear()
-    update.message.reply_text("Заказ отменен. Ждем вас еще!")
+    message = update.callback_query.message if update.callback_query else update.message
+    message.reply_text("Заказ отменен. Ждем вас еще!")
 
     return ConversationHandler.END
 
@@ -263,9 +269,9 @@ def order_action(update: Update, context: CallbackContext):
     if action == "user:confirm":
         return create_order(query, context.user_data)
     elif action == "user:reorder":
-        return new_order(query, context)
+        return new_order(update, context)
     elif action == "user:cancel":
-        return cancel(query, context)
+        return cancel(update, context)
 
 
 def create_order(query: CallbackQuery, user_data: dict):
