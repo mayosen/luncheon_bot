@@ -45,8 +45,8 @@ class Product(BaseModel):
 
 class OrderItem(BaseModel):
     id = pw.AutoField()
-    order_id = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
-    product_item = pw.ForeignKeyField(Product, on_delete="CASCADE")
+    order = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
+    product = pw.ForeignKeyField(Product, on_delete="CASCADE")
 
 
 db.create_tables([User, Order, Product, OrderItem])

@@ -17,14 +17,6 @@ class User(BaseModel):
     address = pw.CharField(default="")
     phone = pw.CharField(default="")
 
-    # def __str__(self):
-    #     info = (f"{self.status}: {self.name}\n"
-    #             f"id: {self.id}\n"
-    #             f"username: {self.username}\n"
-    #             f"address: {self.address}\n"
-    #             f"phone: {self.phone}\n")
-    #     return info
-
     def __str__(self):
         return f"@{self.username}\n" if self.username else f"{self.id}\n"
 
@@ -60,5 +52,5 @@ class Product(BaseModel):
 
 class OrderItem(BaseModel):
     id = pw.AutoField()
-    order_id = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
-    product_item = pw.ForeignKeyField(Product, on_delete="CASCADE")
+    order = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
+    product = pw.ForeignKeyField(Product, on_delete="CASCADE")
