@@ -71,10 +71,8 @@ def switch_product(update: Update, context: CallbackContext):
 
 def add_to_cart(update: Update, context: CallbackContext):
     query = update.callback_query
-
-    data = update.callback_query.data
+    data = query.data
     index = int(re.match(r"cart:(\w+)", data).group(1))
-
     user_data = context.user_data
     product: Product = user_data["cache"][index]
     user_data["cart"].append(product)
@@ -83,7 +81,6 @@ def add_to_cart(update: Update, context: CallbackContext):
 
 def process_state(update: Union[Message, CallbackQuery], category: str, alias: str, user_data: dict):
     if isinstance(update, CallbackQuery):
-        update.answer()
         message = update.message
     else:
         message = update
@@ -102,20 +99,23 @@ def process_state(update: Union[Message, CallbackQuery], category: str, alias: s
 
 
 def ask_snack(update: Update, context: CallbackContext):
-    process_state(update.callback_query, "snack", "закуску", context.user_data)
+    query = update.callback_query
+    query.edit_message_reply_markup()
+    process_state(query, "snack", "закуску", context.user_data)
 
     return SNACK
 
 
 def ask_drink(update: Update, context: CallbackContext):
-    process_state(update.callback_query, "drink", "напиток", context.user_data)
+    query = update.callback_query
+    query.edit_message_reply_markup()
+    process_state(query, "drink", "напиток", context.user_data)
 
     return DRINK
 
 
 def complete_cart(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
     user_data = context.user_data
 
     if query.data != "next_state":
@@ -135,7 +135,6 @@ def complete_cart(update: Update, context: CallbackContext):
         return
 
     message.reply_text("Корзина сформирована.")
-
     user = User.get(id=query.from_user.id)
 
     if user.phone:
@@ -262,7 +261,6 @@ def validate_order(update: Union[Message, CallbackQuery], user: User, user_data:
 
 def order_action(update: Update, context: CallbackContext):
     query = update.callback_query
-    # query.answer()  # Клавиатура и так удаляется
     query.message.edit_reply_markup()
     action = query.data
 
@@ -288,8 +286,8 @@ def create_order(query: CallbackQuery, user_data: dict):
     products = user_data["cart"]
     for product in products:
         OrderItem.create(
-            order_id=order,
-            product_item=product,
+            order=order,
+            product=product,
         )
 
     message = query.message
