@@ -1,47 +1,31 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def get_product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
+def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(
-                text="Продолжить",
-                callback_data="next_category",
+                text="Следующий этап",
+                callback_data=f"next_state",
             )
         ],
         [
             InlineKeyboardButton(
-                text="В корзину",
+                text="Добавить в корзину",
                 callback_data=f"cart:{index}"
             ),
-        ]
+        ],
+        [
+            InlineKeyboardButton(
+                text="×" if index == 0 else "<",
+                callback_data="index:" + ("pass" if index == 0 else f"{index - 1}"),
+            ),
+            InlineKeyboardButton(
+                text="×" if index == products_len - 1 else ">",
+                callback_data="index:" + ("pass" if index == products_len - 1 else f"{index + 1}"),
+            ),
+        ],
     ]
-
-    if index == 0:
-        buttons.append([
-            InlineKeyboardButton(
-                text=">",
-                callback_data=f"index:{index + 1}"
-            ),
-        ])
-    elif index == products_len - 1:
-        buttons.append([
-            InlineKeyboardButton(
-                text="<",
-                callback_data=f"index:{index - 1}"
-            ),
-        ])
-    else:
-        buttons.append([
-            InlineKeyboardButton(
-                text="<",
-                callback_data=f"index:{index - 1}"
-            ),
-            InlineKeyboardButton(
-                text=">",
-                callback_data=f"index:{index + 1}"
-            ),
-        ])
 
     return InlineKeyboardMarkup(buttons)
 
@@ -59,7 +43,7 @@ phone_keyboard = InlineKeyboardMarkup(
                 text="Ввести новый",
                 callback_data="new_phone",
             ),
-        ]
+        ],
     ]
 )
 
@@ -77,29 +61,35 @@ address_keyboard = InlineKeyboardMarkup(
                 text="Ввести новый",
                 callback_data="new_address",
             ),
-        ]
+        ],
     ]
 )
 
-order_action_keyboard = InlineKeyboardMarkup(
-    [
-        [
-            InlineKeyboardButton(
-                text="Подтвердить заказ",
-                callback_data="user:confirm",
-            ),
-        ],
-        [
+
+def order_action_keyboard(empty_cart=False) -> InlineKeyboardMarkup:
+    keyboard = []
+    if not empty_cart:
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text="Подтвердить заказ",
+                    callback_data="user:confirm",
+                ),
+            ],
+        )
+
+    keyboard.append([
             InlineKeyboardButton(
                 text="Собрать заказ заново",
                 callback_data="user:reorder",
             ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="Отменить заказ",
-                callback_data="user:cancel",
-            ),
-        ],
-    ]
-)
+    ])
+
+    keyboard.append([
+        InlineKeyboardButton(
+            text="Отменить заказ",
+            callback_data="user:cancel",
+        ),
+    ])
+
+    return InlineKeyboardMarkup(keyboard)

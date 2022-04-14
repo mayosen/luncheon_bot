@@ -1,6 +1,6 @@
 from typing import Union
 
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import CallbackContext
 
 from peewee import DoesNotExist
@@ -17,7 +17,7 @@ def get_user(user_id: int) -> Union[User, None]:
 
 def check_user(handler):
     def wrapper(update: Update, context: CallbackContext):
-        from_user = update.message.from_user
+        from_user = update.message.from_user if update.message else update.callback_query.from_user
 
         if not get_user(from_user.id):
             username = from_user.username
