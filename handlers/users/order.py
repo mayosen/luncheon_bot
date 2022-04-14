@@ -176,7 +176,9 @@ def get_phone(update: Update, context: CallbackContext):
     message = update.message
     phone = message.contact.phone_number if message.contact else message.text
 
-    if phone.startswith("7"):
+    if len(phone) == 10:
+        phone = "+7" + phone
+    elif len(phone) == 11:
         phone = "+" + phone
 
     user = User.get(id=message.from_user.id)
