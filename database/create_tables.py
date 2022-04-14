@@ -1,3 +1,8 @@
+"""
+Вынесено в отдельный модуль, чтобы хранить файл с БД в /database
+"""
+
+
 import peewee as pw
 
 
@@ -24,9 +29,10 @@ class Order(BaseModel):
     user = pw.ForeignKeyField(User, backref="orders", on_delete="CASCADE")
     address = pw.CharField()
     phone = pw.CharField()
+    created = pw.DateTimeField()
     rate = pw.IntegerField(default=0)
     feedback = pw.TextField(default="")
-    feedback_attachments = pw.TextField(default="")
+    attachments = pw.TextField(default="")
 
 
 class Product(BaseModel):

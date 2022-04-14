@@ -1,5 +1,6 @@
 import re
 from typing import List, Union
+from datetime import datetime
 
 from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPhoto
 from telegram.ext import Dispatcher, CallbackContext, Filters
@@ -24,7 +25,7 @@ def new_order(update: Update, context: CallbackContext):
     else:
         message = update.message
         to_process = update.message
-        
+
     message.reply_text(
         "Сборка заказа:\n"
         "- основное блюдо\n"
@@ -83,7 +84,6 @@ def add_to_cart(update: Update, context: CallbackContext):
 def process_state(update: Union[Message, CallbackQuery], category: str, alias: str, user_data: dict):
     if isinstance(update, CallbackQuery):
         update.answer()
-        # update.edit_message_reply_markup()
         message = update.message
     else:
         message = update
@@ -262,7 +262,7 @@ def validate_order(update: Union[Message, CallbackQuery], user: User, user_data:
 
 def order_action(update: Update, context: CallbackContext):
     query = update.callback_query
-    # query.answer()
+    # query.answer()  # Клавиатура и так удаляется
     query.message.edit_reply_markup()
     action = query.data
 
@@ -282,6 +282,7 @@ def create_order(query: CallbackQuery, user_data: dict):
         user=user,
         address=User.address,
         phone=User.phone,
+        created=datetime.now(),
     )
 
     products = user_data["cart"]
