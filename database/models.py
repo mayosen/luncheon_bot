@@ -18,24 +18,25 @@ class User(BaseModel):
     phone = pw.CharField(default="")
 
     def __str__(self):
-        info = (f"{self.status}: {self.name}\n"
-                f"id: {self.id}\n"
-                f"username: {self.username}\n"
-                f"address: {self.address}\n"
-                f"phone: {self.phone}\n")
-        return info
+        return f"@{self.username}\n" if self.username else f"{self.id}\n"
 
 
 class Order(BaseModel):
     id = pw.AutoField()
-    status = pw.CharField(default="В обработке")
+    status = pw.CharField()
     user = pw.ForeignKeyField(User, backref="orders", on_delete="CASCADE")
     address = pw.CharField()
     phone = pw.CharField()
-    products = pw.CharField()
+    created = pw.DateTimeField()
     rate = pw.IntegerField(default=0)
-    feedback = pw.TextField()
-    feedback_attachments = pw.TextField()
+    feedback = pw.TextField(default="")
+    attachments = pw.TextField(default="")
+
+    def __str__(self):
+        return (
+            f"Заказ <code>#{self.id}</code>\n"
+            f"Пользователь: {str(self.user)}\n"
+        )
 
 
 class Product(BaseModel):
@@ -43,4 +44,13 @@ class Product(BaseModel):
     category = pw.CharField()
     title = pw.CharField()
     price = pw.IntegerField()
-    photo = pw.CharField()  # tg file_id
+    photo = pw.CharField()
+
+    def __str__(self):
+        return f"{self.title}, {self.price} р."
+
+
+class OrderItem(BaseModel):
+    id = pw.AutoField()
+    order = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
+    product = pw.ForeignKeyField(Product, on_delete="CASCADE")
