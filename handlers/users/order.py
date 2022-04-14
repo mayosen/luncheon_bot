@@ -140,7 +140,7 @@ def complete_cart(update: Update, context: CallbackContext):
     if user.phone:
         message.reply_text(
             text=f"В прошлом заказе вы указывали номер:\n<code>{user.phone}</code>\n"
-                 f"Использовать его в в этом заказе?",
+                 f"Использовать его в этом заказе?",
             reply_markup=keyboards.phone_keyboard,
         )
     else:
@@ -192,7 +192,7 @@ def to_address(message: Message, user: User):
     if user.address:
         message.reply_text(
             text=f"В прошлом заказе вы указывали адрес:\n<code>{user.address}</code>\n"
-                 f"Использовать его в в этом заказе?",
+                 f"Использовать его в этом заказе?",
             reply_markup=keyboards.address_keyboard,
         )
     else:
