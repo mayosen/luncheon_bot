@@ -1,3 +1,4 @@
+from datetime import datetime
 import peewee as pw
 
 
@@ -16,6 +17,7 @@ class User(BaseModel):
     username = pw.CharField()
     address = pw.CharField(default="")
     phone = pw.CharField(default="")
+    joined = pw.DateTimeField(default=datetime.now)
 
     def __str__(self):
         return f"@{self.username}\n" if self.username else f"{self.id}\n"

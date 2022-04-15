@@ -2,7 +2,7 @@
 Вынесено в отдельный модуль, чтобы хранить файл с БД в /database
 """
 
-
+from datetime import datetime
 import peewee as pw
 
 
@@ -21,6 +21,7 @@ class User(BaseModel):
     username = pw.CharField()
     address = pw.CharField(default="")
     phone = pw.CharField(default="")
+    joined = pw.DateTimeField(default=datetime.now)
 
 
 class Order(BaseModel):
