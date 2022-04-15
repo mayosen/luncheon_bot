@@ -388,6 +388,8 @@ def get_feedback(update: Update, context: CallbackContext):
 
 def create_feedback(update: Update, context: CallbackContext):
     update.callback_query.edit_message_reply_markup()
+    update.callback_query.message.reply_text("Спасибо за подробный отзыв, мы учтем ваши пожелания!")
+
     feedback: dict = context.user_data["feedback"]
     order: Order = feedback["order"]
     order.feedback = ".\n".join(feedback["text"])
