@@ -20,7 +20,7 @@ class User(BaseModel):
     joined = pw.DateTimeField(default=datetime.now)
 
     def __str__(self):
-        return f"@{self.username}\n" if self.username else f"{self.id}\n"
+        return f"@{self.username}" if self.username else f"<code>{self.id}</code>"
 
 
 class Order(BaseModel):
