@@ -19,7 +19,7 @@ def approve_order(update: Update, context: CallbackContext):
     order: Order = Order.get(id=order_id)
 
     if order.status != "подтверждение":
-        query.message.reply_text(f"Заказ <code>#{order_id}</code> принят другим администратором.")
+        query.message.reply_text(f"Заказ <code>#{order_id}</code> обработан другим администратором.")
         return
 
     order.status = "принят"
@@ -46,7 +46,7 @@ def reject_order(update: Update, context: CallbackContext):
     order: Order = Order.get(id=order_id)
 
     if order.status != "подтверждение":
-        query.message.reply_text(f"Заказ <code>#{order_id}</code> отклонен другим администратором.")
+        query.message.reply_text(f"Заказ <code>#{order_id}</code> обработан другим администратором.")
         return
 
     context.user_data["to_reject"] = order
