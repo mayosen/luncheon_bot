@@ -93,3 +93,45 @@ def order_action_keyboard(empty_cart=False) -> InlineKeyboardMarkup:
     ])
 
     return InlineKeyboardMarkup(keyboard)
+
+
+def rate_order_keyboard(order_id: int) -> InlineKeyboardMarkup:
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="🌟",
+                callback_data=f"user:rate:1:{order_id}",
+            ),
+            InlineKeyboardButton(
+                text="🌟",
+                callback_data=f"user:rate:2:{order_id}",
+            ),
+            InlineKeyboardButton(
+                text="🌟",
+                callback_data=f"user:rate:3:{order_id}",
+            ),
+            InlineKeyboardButton(
+                text="🌟",
+                callback_data=f"user:rate:4:{order_id}",
+            ),
+            InlineKeyboardButton(
+                text="🌟",
+                callback_data=f"user:rate:5:{order_id}",
+            ),
+        ]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def feedback_order_keyboard(order_id: int) -> InlineKeyboardMarkup:
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="Оставить отзыв",
+                callback_data=f"user:rate:feedback:{order_id}",
+            )
+        ]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)

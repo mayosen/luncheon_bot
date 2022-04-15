@@ -7,6 +7,7 @@ from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
 import keyboards.order as keyboards
+from keyboards.admin import approve_keyboard
 from database.api import check_user
 from database.models import User, Product, Order, OrderItem
 
@@ -280,8 +281,8 @@ def create_order(query: CallbackQuery, user_data: dict):
     order: Order = Order.create(
         status="подтверждение",
         user=user,
-        address=User.address,
-        phone=User.phone,
+        address=user.address,
+        phone=user.phone,
         created=datetime.now(),
     )
 
@@ -311,10 +312,40 @@ def create_order(query: CallbackQuery, user_data: dict):
         message.bot.send_message(
             chat_id=admin.id,
             text=text,
-            reply_markup=None,  # TODO: markup
+            reply_markup=approve_keyboard(order.id),
         )
 
     return ConversationHandler.END
+
+
+def rate_order(update: Update, context: CallbackContext):
+    query = update.callback_query
+    data = re.match(r"user:rate:(\d+):(\d+)", query.data)
+    rate = int(data.group(1))
+    order_id = int(data.group(2))
+
+    order: Order = Order.get(id=order_id)
+    order.rate = rate
+    order.save()
+
+    if 1 <= rate <= 3:
+        query.answer("Мы сожалеем. Расскажите, что вам не понравилось.")
+    elif rate == 4:
+        query.answer("Чего не хватило до идеала?")
+    elif rate == 5:
+        query.answer("Рады стараться для вас!")
+
+    query.edit_message_reply_markup(
+        reply_markup=keyboards.feedback_order_keyboard(order_id),
+    )
+    query.message.reply_text("Спасибо за заказ! Ждем вас еще!")
+
+
+def feedback_order(update: Update, context: CallbackContext):
+    # TODO:
+    query = update.callback_query
+    query.edit_message_reply_markup()
+    query.message.reply_text("To be done")
 
 
 def register(dp: Dispatcher):
@@ -362,3 +393,5 @@ def register(dp: Dispatcher):
     )
 
     dp.add_handler(order_handler)
+    dp.add_handler(CallbackQueryHandler(pattern=r"^user:rate:\d+", callback=rate_order))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^user:rate:feedback:", callback=feedback_order))
