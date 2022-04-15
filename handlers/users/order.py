@@ -51,7 +51,7 @@ def switch_product(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
 
-    data = re.match(r"index:(\w+)", query.data).group(1)
+    data = re.match(r"user:index:(\w+)", query.data).group(1)
     if data == "pass":
         return
     else:
@@ -73,7 +73,7 @@ def switch_product(update: Update, context: CallbackContext):
 def add_to_cart(update: Update, context: CallbackContext):
     query = update.callback_query
     data = query.data
-    index = int(re.match(r"cart:(\w+)", data).group(1))
+    index = int(re.match(r"user:cart:(\w+)", data).group(1))
     user_data = context.user_data
     product: Product = user_data["cache"][index]
     user_data["cart"].append(product)
@@ -119,8 +119,8 @@ def complete_cart(update: Update, context: CallbackContext):
     query = update.callback_query
     user_data = context.user_data
 
-    if query.data != "next_state":
-        index = int(re.match(r"cart:(\w+)", query.data).group(1))
+    if query.data != "user:next_state":
+        index = int(re.match(r"user:cart:(\w+)", query.data).group(1))
         product = user_data["cache"][index]
         user_data["cart"].append(product[index])
 
@@ -356,31 +356,31 @@ def register(dp: Dispatcher):
         ],
         states={
             MAIN_DISH: [
-                CallbackQueryHandler(pattern=r"^index:", callback=switch_product),
-                CallbackQueryHandler(pattern=r"^cart:", callback=add_to_cart),
-                CallbackQueryHandler(pattern=r"^next_state?", callback=ask_snack),
+                CallbackQueryHandler(pattern=r"user:index:\w+", callback=switch_product),
+                CallbackQueryHandler(pattern=r"user:cart:\d+", callback=add_to_cart),
+                CallbackQueryHandler(pattern=r"user:next_state", callback=ask_snack),
             ],
             SNACK: [
-                CallbackQueryHandler(pattern=r"^index:", callback=switch_product),
-                CallbackQueryHandler(pattern=r"^cart:", callback=add_to_cart),
-                CallbackQueryHandler(pattern=r"^next_state?", callback=ask_drink),
+                CallbackQueryHandler(pattern=r"user:index:\w+", callback=switch_product),
+                CallbackQueryHandler(pattern=r"user:cart:\d+", callback=add_to_cart),
+                CallbackQueryHandler(pattern=r"user:next_state", callback=ask_drink),
             ],
             DRINK: [
-                CallbackQueryHandler(pattern=r"^index:", callback=switch_product),
-                CallbackQueryHandler(pattern=r"^cart:", callback=add_to_cart),
-                CallbackQueryHandler(pattern=r"^next_state?", callback=complete_cart),
+                CallbackQueryHandler(pattern=r"user:index:\w+", callback=switch_product),
+                CallbackQueryHandler(pattern=r"user:cart:\d+", callback=add_to_cart),
+                CallbackQueryHandler(pattern=r"user:next_state", callback=complete_cart),
                 CallbackQueryHandler(pattern=r"user:(reorder|cancel)", callback=order_action),
             ],
             PHONE: [
                 MessageHandler(Filters.entity(MessageEntity.PHONE_NUMBER) | Filters.contact, get_phone),
-                CallbackQueryHandler(pattern=r"^last_phone?", callback=use_last_phone),
-                CallbackQueryHandler(pattern=r"^new_phone?", callback=enter_new_phone),
+                CallbackQueryHandler(pattern=r"user:last_phone", callback=use_last_phone),
+                CallbackQueryHandler(pattern=r"user:new_phone", callback=enter_new_phone),
                 MessageHandler(Filters.text & ~Filters.command, incorrect_phone),
             ],
             ADDRESS: [
                 MessageHandler((Filters.text & ~Filters.command) | Filters.location, get_address),
-                CallbackQueryHandler(pattern=r"^last_address?", callback=use_last_address),
-                CallbackQueryHandler(pattern=r"^new_address?", callback=enter_new_address),
+                CallbackQueryHandler(pattern=r"user:last_address", callback=use_last_address),
+                CallbackQueryHandler(pattern=r"user:new_address", callback=enter_new_address),
             ],
             CONFIRM: [
                 CallbackQueryHandler(pattern=r"user:(confirm|reorder|cancel)", callback=order_action),
@@ -393,5 +393,5 @@ def register(dp: Dispatcher):
     )
 
     dp.add_handler(order_handler)
-    dp.add_handler(CallbackQueryHandler(pattern=r"^user:rate:\d+", callback=rate_order))
-    dp.add_handler(CallbackQueryHandler(pattern=r"^user:rate:feedback:", callback=feedback_order))
+    dp.add_handler(CallbackQueryHandler(pattern=r"user:rate:\d+", callback=rate_order))
+    dp.add_handler(CallbackQueryHandler(pattern=r"user:feedback:\d+", callback=feedback_order))
