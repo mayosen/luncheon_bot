@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
+from filters.cancel import cancel_filter
 from database.models import Order, User
 import keyboards.admin as keyboards
 from keyboards.order import rate_order_keyboard
@@ -50,7 +51,8 @@ def reject_order(update: Update, context: CallbackContext):
         return
 
     context.user_data["to_reject"] = order
-    query.message.reply_text(f"{query.from_user.full_name}, введите причину отказа.")
+    query.message.reply_text(f"{query.from_user.full_name}, введите причину отказа.\n\n"
+                             f"Для отмены введите /cancel")
 
     return REJECT
 
@@ -135,12 +137,12 @@ def register(dp: Dispatcher):
         ],
         states={
             REJECT: [
-                MessageHandler(Filters.text, reject_reason),
+                MessageHandler(~Filters.command & Filters.text, reject_reason),
             ]
         },
         fallbacks=[
             CommandHandler("cancel", cancel_reject),
-            MessageHandler(Filters.regex(re.compile(r".*(отмена|стоп).*", re.IGNORECASE)), cancel_reject),
+            MessageHandler(cancel_filter, cancel_reject),
         ],
     )
     dp.add_handler(rejection_handler)

@@ -1,44 +1,79 @@
-from typing import List
-
 from telegram import Update
-from telegram.ext import Dispatcher, CallbackContext, Filters, CommandHandler
+from telegram.error import BadRequest
+from telegram.ext import Dispatcher, CallbackContext, Filters, CommandHandler, ConversationHandler
 from telegram.ext import MessageHandler
 
-from database.models import Product, User
 from filters import is_admin
+from filters.cancel import cancel_filter
+
+COLLECT = 0
 
 
-def get_photo(update: Update, context: CallbackContext):
-    update.message.reply_text(
-        text=f"file_id: <code>{update.message.photo[-1].file_id}</code>",
-    )
+def to_photo(update: Update, context: CallbackContext):
+    if not context.args:
+        update.message.reply_text("Отправьте <b>file_id</b> как аргумент команды.")
+        return
 
-
-def get_products(update: Update, context: CallbackContext):
-    products: List[Product] = Product.select().where(Product.category == "main_dish")
-    for item in products:
-        text = (
-            f"{item.title}\n"
-            f"Цена: {item.price}"
+    file_id = context.args[0]
+    try:
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=file_id,
         )
-        update.message.reply_photo(
-            photo=item.photo,
-            caption=text,
-        )
+    except BadRequest as error:
+        update.message.reply_text(f"Ошибка: {error}")
 
 
-def send_friends(update: Update, context: CallbackContext):
-    friends: List[User] = User.select()
-    for friend in friends:
-        # context.bot.send_message(chat_id=friend.id, text="Лох.")
+def collect_photos(update: Update, context: CallbackContext):
+    update.message.reply_text("Пришлите фотографии. А когда закончишь, отправь /stop")
+    context.user_data["photo"] = []
 
-        update.message.reply_text(
-            f"Сообщение для пользователя @{friend.username if friend.username else friend.id} "
-            f"отправлено."
-        )
+    return COLLECT
+
+
+def to_file_id(update: Update, context: CallbackContext):
+    photo = context.user_data["photo"]
+    photo.append(update.message.photo[-1].file_id)
+
+
+def send_file_ids(update: Update, context: CallbackContext):
+    photo_list = context.user_data["photo"]
+    context.user_data.clear()
+
+    if photo_list:
+        prepared = [f"{index + 1}: <code>{photo}</code>" for index, photo in enumerate(photo_list)]
+        text = "\n\n".join(prepared)
+        update.message.reply_text(text)
+    else:
+        update.message.reply_text("Отменено.")
+
+    return ConversationHandler.END
+
+
+def cancel_collecting(update: Update, context: CallbackContext):
+    update.message.reply_text("Отменено.")
+    context.user_data.clear()
+
+    return ConversationHandler.END
 
 
 def register(dp: Dispatcher):
-    dp.add_handler(CommandHandler("products", get_products, filters=is_admin))
-    dp.add_handler(CommandHandler("friends", send_friends, filters=is_admin))
-    dp.add_handler(MessageHandler(Filters.photo & is_admin, get_photo))
+    dp.add_handler(CommandHandler("file", to_photo, filters=is_admin))
+
+    photo_handler = ConversationHandler(
+        entry_points=[
+            CommandHandler("photo", collect_photos, filters=is_admin),
+        ],
+        states={
+            COLLECT: [
+                MessageHandler(Filters.photo, to_file_id),
+                CommandHandler("stop", send_file_ids),
+            ]
+        },
+        fallbacks=[
+            CommandHandler("cancel", cancel_collecting),
+            MessageHandler(cancel_filter, cancel_collecting),
+        ],
+    )
+
+    dp.add_handler(photo_handler)

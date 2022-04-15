@@ -135,3 +135,15 @@ def feedback_order_keyboard(order_id: int) -> InlineKeyboardMarkup:
     ]
 
     return InlineKeyboardMarkup(keyboard)
+
+
+create_feedback_keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(
+                text="Отправить отзыв",
+                callback_data="user:feedback:create",
+            )
+        ]
+    ]
+)

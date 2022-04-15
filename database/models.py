@@ -35,10 +35,7 @@ class Order(BaseModel):
     attachments = pw.TextField(default="")
 
     def __str__(self):
-        return (
-            f"Заказ <code>#{self.id}</code>\n"
-            f"Пользователь: {str(self.user)}\n"
-        )
+        return f"Order #{self.id} of User: {str(self.user)}"
 
 
 class Product(BaseModel):
