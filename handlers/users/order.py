@@ -333,7 +333,7 @@ def rate_order(update: Update, context: CallbackContext):
     order.save()
 
     if 1 <= rate <= 3:
-        query.answer("Мы сожалеем. Расскажите, что вам не понравилось.")
+        query.answer("Мы сожалеем. Расскажите, что вам не понравилось?")
     elif rate == 4:
         query.answer("Чего не хватило до идеала?")
     elif rate == 5:
@@ -452,10 +452,10 @@ def register(dp: Dispatcher):
                 MessageHandler(Filters.entity(MessageEntity.PHONE_NUMBER) | Filters.contact, get_phone),
                 CallbackQueryHandler(pattern=r"user:last_phone", callback=use_last_phone),
                 CallbackQueryHandler(pattern=r"user:new_phone", callback=enter_new_phone),
-                MessageHandler(Filters.text & ~Filters.command, incorrect_phone),
+                MessageHandler(Filters.text & ~Filters.command & ~cancel_filter, incorrect_phone),
             ],
             ADDRESS: [
-                MessageHandler((Filters.text & ~Filters.command) | Filters.location, get_address),
+                MessageHandler((Filters.text & ~Filters.command & ~cancel_filter) | Filters.location, get_address),
                 CallbackQueryHandler(pattern=r"user:last_address", callback=use_last_address),
                 CallbackQueryHandler(pattern=r"user:new_address", callback=enter_new_address),
             ],
@@ -478,7 +478,7 @@ def register(dp: Dispatcher):
         ],
         states={
             FEEDBACK: [
-                MessageHandler(~Filters.command & (Filters.text | Filters.photo | Filters.document), get_feedback),
+                MessageHandler((Filters.text & ~Filters.command & ~cancel_filter) | Filters.photo, get_feedback),
                 CallbackQueryHandler(pattern=r"user:feedback:create", callback=create_feedback),
             ]
         },

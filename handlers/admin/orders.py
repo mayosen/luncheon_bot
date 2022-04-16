@@ -137,7 +137,7 @@ def register(dp: Dispatcher):
         ],
         states={
             REJECT: [
-                MessageHandler(~Filters.command & Filters.text, reject_reason),
+                MessageHandler(Filters.text & ~Filters.command & ~cancel_filter, reject_reason),
             ]
         },
         fallbacks=[
