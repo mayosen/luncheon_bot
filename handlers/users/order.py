@@ -12,7 +12,6 @@ from keyboards.admin import approve_keyboard
 from database.api import check_user
 from database.models import User, Product, Order, OrderItem
 
-
 MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
 FEEDBACK = 0
 

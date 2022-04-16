@@ -9,7 +9,6 @@ from database.models import Order, User
 import keyboards.admin as keyboards
 from keyboards.order import rate_order_keyboard
 
-
 REJECT = 0
 
 
