@@ -361,12 +361,13 @@ def feedback_order(update: Update, context: CallbackContext):
              "- скорость доставки\n\n"
              "Кроме того, вы можете прислать фотографию вашего заказа."
     )
-    query.message.reply_text(
+    sent: Message = query.message.reply_text(
         text="Отправьте необходимые сообщения и вложения, а затем "
              "нажмите кнопку <b>Отправить отзыв</b>\n\n"
              "Для отмены введите /cancel",
         reply_markup=keyboards.create_feedback_keyboard,
     )
+    context.user_data["feedback_message"] = sent
 
     order_id = int(re.match(r"user:feedback:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
@@ -428,6 +429,11 @@ def create_feedback(update: Update, context: CallbackContext):
 
 def cancel_feedback(update: Update, context: CallbackContext):
     update.message.reply_text("Отзыв отменен.")
+    sent: Message = context.user_data["feedback_message"]
+    context.bot.edit_message_reply_markup(
+        chat_id=sent.chat_id,
+        message_id=sent.message_id,
+    )
     context.user_data.clear()
 
     return ConversationHandler.END
