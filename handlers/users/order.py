@@ -28,6 +28,12 @@ def new_order(update: Update, context: CallbackContext):
         message = update.message
         to_process = update.message
 
+    admins: List[User] = User.select().where(User.status == "admin")
+    if not admins:
+        message.reply_text("Извините, на данный момент нет активных администраторов, которые могут "
+                           "принять ваш заказ.\nПожалуйста, вернитесь позднее.")
+        return ConversationHandler.END
+
     message.reply_text(
         "Сборка заказа:\n"
         "- основное блюдо\n"
@@ -394,7 +400,7 @@ def create_feedback(update: Update, context: CallbackContext):
 
     feedback: dict = context.user_data["feedback"]
     order: Order = feedback["order"]
-    order.feedback = ".\n".join(feedback["text"])
+    order.feedback = ". \n".join(feedback["text"])
     order.attachments = ", ".join(feedback["attachments"])
     order.save()
 
