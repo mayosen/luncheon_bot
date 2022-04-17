@@ -2,16 +2,18 @@ import re
 from typing import List, Union
 from datetime import datetime
 
-from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPhoto
+from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPhoto, ChatAction
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
-import keyboards.order as keyboards
-from database.api import check_user
+from filters.cancel import cancel_filter
 from database.models import User, Product, Order, OrderItem
-
+from database.api import check_user, get_admins
+from keyboards.admin import approve_keyboard
+import keyboards.order as keyboards
 
 MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
+FEEDBACK = 0
 
 
 @check_user
@@ -26,6 +28,12 @@ def new_order(update: Update, context: CallbackContext):
         message = update.message
         to_process = update.message
 
+    admins = get_admins()
+    if not admins:
+        message.reply_text("Извините, на данный момент нет активных администраторов, которые могут "
+                           "принять ваш заказ.\n\nПожалуйста, вернитесь позднее.")
+        return ConversationHandler.END
+
     message.reply_text(
         "Сборка заказа:\n"
         "- основное блюдо\n"
@@ -38,7 +46,7 @@ def new_order(update: Update, context: CallbackContext):
     return MAIN_DISH
 
 
-def cancel(update: Update, context: CallbackContext):
+def cancel_order(update: Update, context: CallbackContext):
     context.user_data.clear()
     message = update.callback_query.message if update.callback_query else update.message
     message.reply_text("Заказ отменен. Ждем вас еще!")
@@ -50,7 +58,7 @@ def switch_product(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
 
-    data = re.match(r"index:(\w+)", query.data).group(1)
+    data = re.match(r"user:index:(\w+)", query.data).group(1)
     if data == "pass":
         return
     else:
@@ -71,10 +79,8 @@ def switch_product(update: Update, context: CallbackContext):
 
 def add_to_cart(update: Update, context: CallbackContext):
     query = update.callback_query
-
-    data = update.callback_query.data
-    index = int(re.match(r"cart:(\w+)", data).group(1))
-
+    data = query.data
+    index = int(re.match(r"user:cart:(\w+)", data).group(1))
     user_data = context.user_data
     product: Product = user_data["cache"][index]
     user_data["cart"].append(product)
@@ -83,7 +89,6 @@ def add_to_cart(update: Update, context: CallbackContext):
 
 def process_state(update: Union[Message, CallbackQuery], category: str, alias: str, user_data: dict):
     if isinstance(update, CallbackQuery):
-        update.answer()
         message = update.message
     else:
         message = update
@@ -102,24 +107,27 @@ def process_state(update: Union[Message, CallbackQuery], category: str, alias: s
 
 
 def ask_snack(update: Update, context: CallbackContext):
-    process_state(update.callback_query, "snack", "закуску", context.user_data)
+    query = update.callback_query
+    query.edit_message_reply_markup()
+    process_state(query, "snack", "закуску", context.user_data)
 
     return SNACK
 
 
 def ask_drink(update: Update, context: CallbackContext):
-    process_state(update.callback_query, "drink", "напиток", context.user_data)
+    query = update.callback_query
+    query.edit_message_reply_markup()
+    process_state(query, "drink", "напиток", context.user_data)
 
     return DRINK
 
 
 def complete_cart(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
     user_data = context.user_data
 
-    if query.data != "next_state":
-        index = int(re.match(r"cart:(\w+)", query.data).group(1))
+    if query.data != "user:next_state":
+        index = int(re.match(r"user:cart:(\w+)", query.data).group(1))
         product = user_data["cache"][index]
         user_data["cart"].append(product[index])
 
@@ -135,13 +143,12 @@ def complete_cart(update: Update, context: CallbackContext):
         return
 
     message.reply_text("Корзина сформирована.")
-
     user = User.get(id=query.from_user.id)
 
     if user.phone:
         message.reply_text(
             text=f"В прошлом заказе вы указывали номер:\n<code>{user.phone}</code>\n"
-                 f"Использовать его в в этом заказе?",
+                 f"Использовать его в этом заказе?",
             reply_markup=keyboards.phone_keyboard,
         )
     else:
@@ -177,7 +184,9 @@ def get_phone(update: Update, context: CallbackContext):
     message = update.message
     phone = message.contact.phone_number if message.contact else message.text
 
-    if phone.startswith("7"):
+    if len(phone) == 10:
+        phone = "+7" + phone
+    elif len(phone) == 11:
         phone = "+" + phone
 
     user = User.get(id=message.from_user.id)
@@ -191,7 +200,7 @@ def to_address(message: Message, user: User):
     if user.address:
         message.reply_text(
             text=f"В прошлом заказе вы указывали адрес:\n<code>{user.address}</code>\n"
-                 f"Использовать его в в этом заказе?",
+                 f"Использовать его в этом заказе?",
             reply_markup=keyboards.address_keyboard,
         )
     else:
@@ -262,7 +271,6 @@ def validate_order(update: Union[Message, CallbackQuery], user: User, user_data:
 
 def order_action(update: Update, context: CallbackContext):
     query = update.callback_query
-    # query.answer()  # Клавиатура и так удаляется
     query.message.edit_reply_markup()
     action = query.data
 
@@ -271,7 +279,7 @@ def order_action(update: Update, context: CallbackContext):
     elif action == "user:reorder":
         return new_order(update, context)
     elif action == "user:cancel":
-        return cancel(update, context)
+        return cancel_order(update, context)
 
 
 def create_order(query: CallbackQuery, user_data: dict):
@@ -280,16 +288,16 @@ def create_order(query: CallbackQuery, user_data: dict):
     order: Order = Order.create(
         status="подтверждение",
         user=user,
-        address=User.address,
-        phone=User.phone,
+        address=user.address,
+        phone=user.phone,
         created=datetime.now(),
     )
 
     products = user_data["cart"]
     for product in products:
         OrderItem.create(
-            order_id=order,
-            product_item=product,
+            order=order,
+            product=product,
         )
 
     message = query.message
@@ -297,7 +305,7 @@ def create_order(query: CallbackQuery, user_data: dict):
                        f"Вам будут приходить уведомления об изменении его статуса.")
     user_data.clear()
 
-    admins: List[User] = User.select().where(User.status == "admin")
+    admins = get_admins()
     positions = format_items(products)
     text = (
         f"Новый заказ <code>#{order.id}</code>\n\n"
@@ -306,13 +314,127 @@ def create_order(query: CallbackQuery, user_data: dict):
         f"Адрес: <code>{user.address}</code>\n\n"
         f"{positions}"
     )
+    # TODO: вынести в Order.format(self)
+    # TODO: получение этого заказ через команду
 
     for admin in admins:
         message.bot.send_message(
             chat_id=admin.id,
             text=text,
-            reply_markup=None,  # TODO: markup
+            reply_markup=approve_keyboard(order.id),
         )
+
+    return ConversationHandler.END
+
+
+def rate_order(update: Update, context: CallbackContext):
+    query = update.callback_query
+    data = re.match(r"user:rate:(\d+):(\d+)", query.data)
+    rate = int(data.group(1))
+    order_id = int(data.group(2))
+
+    order: Order = Order.get(id=order_id)
+    order.rate = rate
+    order.save()
+
+    if 1 <= rate <= 3:
+        query.answer("Мы сожалеем. Расскажите, что вам не понравилось?")
+    elif rate == 4:
+        query.answer("Чего не хватило до идеала?")
+    elif rate == 5:
+        query.answer("Рады стараться для вас!")
+
+    query.edit_message_reply_markup(
+        reply_markup=keyboards.feedback_order_keyboard(order_id),
+    )
+    query.message.reply_text("Спасибо за заказ! Ждем вас еще!")
+
+
+def feedback_order(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.edit_message_reply_markup()
+    query.message.reply_text(
+        text="Ваш отзыв очень важен для нас.\n\n"
+             "О чем можно написать:\n"
+             "- разнообразие меню\n"
+             "- качество блюд\n"
+             "- скорость доставки\n\n"
+             "Кроме того, вы можете прислать фотографию вашего заказа."
+    )
+    sent: Message = query.message.reply_text(
+        text="Отправьте необходимые сообщения и вложения, а затем "
+             "нажмите кнопку <b>Отправить отзыв</b>\n\n"
+             "Для отмены введите /cancel",
+        reply_markup=keyboards.create_feedback_keyboard,
+    )
+    context.user_data["feedback_message"] = sent
+
+    order_id = int(re.match(r"user:feedback:(\d+)", query.data).group(1))
+    order = Order.get(id=order_id)
+    context.user_data["feedback"] = {
+        "order": order,
+        "text": [],
+        "attachments": [],
+    }
+
+    return FEEDBACK
+
+
+def get_feedback(update: Update, context: CallbackContext):
+    feedback: dict = context.user_data["feedback"]
+    message = update.message
+
+    if message.photo:
+        message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
+        feedback["attachments"].append(message.photo[-1].file_id)
+        if message.caption:
+            feedback["text"].append("photo: " + message.caption)
+
+    elif message.text:
+        message.reply_chat_action(ChatAction.TYPING)
+        feedback["text"].append(message.text)
+
+
+def create_feedback(update: Update, context: CallbackContext):
+    update.callback_query.edit_message_reply_markup()
+    update.callback_query.message.reply_text("Спасибо за подробный отзыв, мы учтем ваши пожелания!")
+
+    feedback: dict = context.user_data["feedback"]
+    order: Order = feedback["order"]
+    order.feedback = ". \n".join(feedback["text"])
+    order.attachments = ", ".join(feedback["attachments"])
+    order.save()
+
+    admins = get_admins()
+    media = [InputMediaPhoto(photo) for photo in feedback["attachments"]]
+    context.user_data.clear()
+
+    for admin in admins:
+        context.bot.send_message(
+            chat_id=admin.id,
+            text=f"Новый отзыв для заказа <code>#{order.id}</code>\n\n"
+                 f"{order.feedback}",
+        )
+
+        if media:
+            context.bot.send_media_group(
+                chat_id=admin.id,
+                media=media,
+            )
+
+        # TODO: Кнопки: Открыть заказ, Обратная связь
+
+    return ConversationHandler.END
+
+
+def cancel_feedback(update: Update, context: CallbackContext):
+    update.message.reply_text("Отзыв отменен.")
+    sent: Message = context.user_data["feedback_message"]
+    context.bot.edit_message_reply_markup(
+        chat_id=sent.chat_id,
+        message_id=sent.message_id,
+    )
+    context.user_data.clear()
 
     return ConversationHandler.END
 
@@ -325,40 +447,59 @@ def register(dp: Dispatcher):
         ],
         states={
             MAIN_DISH: [
-                CallbackQueryHandler(pattern=r"^index:", callback=switch_product),
-                CallbackQueryHandler(pattern=r"^cart:", callback=add_to_cart),
-                CallbackQueryHandler(pattern=r"^next_state?", callback=ask_snack),
+                CallbackQueryHandler(pattern=r"user:index:\w+", callback=switch_product),
+                CallbackQueryHandler(pattern=r"user:cart:\d+", callback=add_to_cart),
+                CallbackQueryHandler(pattern=r"user:next_state", callback=ask_snack),
             ],
             SNACK: [
-                CallbackQueryHandler(pattern=r"^index:", callback=switch_product),
-                CallbackQueryHandler(pattern=r"^cart:", callback=add_to_cart),
-                CallbackQueryHandler(pattern=r"^next_state?", callback=ask_drink),
+                CallbackQueryHandler(pattern=r"user:index:\w+", callback=switch_product),
+                CallbackQueryHandler(pattern=r"user:cart:\d+", callback=add_to_cart),
+                CallbackQueryHandler(pattern=r"user:next_state", callback=ask_drink),
             ],
             DRINK: [
-                CallbackQueryHandler(pattern=r"^index:", callback=switch_product),
-                CallbackQueryHandler(pattern=r"^cart:", callback=add_to_cart),
-                CallbackQueryHandler(pattern=r"^next_state?", callback=complete_cart),
+                CallbackQueryHandler(pattern=r"user:index:\w+", callback=switch_product),
+                CallbackQueryHandler(pattern=r"user:cart:\d+", callback=add_to_cart),
+                CallbackQueryHandler(pattern=r"user:next_state", callback=complete_cart),
                 CallbackQueryHandler(pattern=r"user:(reorder|cancel)", callback=order_action),
             ],
             PHONE: [
                 MessageHandler(Filters.entity(MessageEntity.PHONE_NUMBER) | Filters.contact, get_phone),
-                CallbackQueryHandler(pattern=r"^last_phone?", callback=use_last_phone),
-                CallbackQueryHandler(pattern=r"^new_phone?", callback=enter_new_phone),
-                MessageHandler(Filters.text & ~Filters.command, incorrect_phone),
+                CallbackQueryHandler(pattern=r"user:last_phone", callback=use_last_phone),
+                CallbackQueryHandler(pattern=r"user:new_phone", callback=enter_new_phone),
+                MessageHandler(Filters.text & ~Filters.command & ~cancel_filter, incorrect_phone),
             ],
             ADDRESS: [
-                MessageHandler((Filters.text & ~Filters.command) | Filters.location, get_address),
-                CallbackQueryHandler(pattern=r"^last_address?", callback=use_last_address),
-                CallbackQueryHandler(pattern=r"^new_address?", callback=enter_new_address),
+                MessageHandler((Filters.text & ~Filters.command & ~cancel_filter) | Filters.location, get_address),
+                CallbackQueryHandler(pattern=r"user:last_address", callback=use_last_address),
+                CallbackQueryHandler(pattern=r"user:new_address", callback=enter_new_address),
             ],
             CONFIRM: [
                 CallbackQueryHandler(pattern=r"user:(confirm|reorder|cancel)", callback=order_action),
-            ]
+            ],
         },
         fallbacks=[
-            CommandHandler("cancel", cancel),
-            MessageHandler(Filters.regex(re.compile(r".*(отмена|стоп).*", re.IGNORECASE)), cancel),
+            CommandHandler("cancel", cancel_order),
+            MessageHandler(cancel_filter, cancel_order),
         ],
     )
 
     dp.add_handler(order_handler)
+    dp.add_handler(CallbackQueryHandler(pattern=r"user:rate:\d+", callback=rate_order))
+
+    feedback_handler = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(pattern=r"user:feedback:\d+", callback=feedback_order),
+        ],
+        states={
+            FEEDBACK: [
+                MessageHandler((Filters.text & ~Filters.command & ~cancel_filter) | Filters.photo, get_feedback),
+                CallbackQueryHandler(pattern=r"user:feedback:create", callback=create_feedback),
+            ]
+        },
+        fallbacks=[
+            CommandHandler("cancel", cancel_feedback),
+            MessageHandler(cancel_filter, cancel_feedback),
+        ],
+    )
+
+    dp.add_handler(feedback_handler)

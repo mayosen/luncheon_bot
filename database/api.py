@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 from telegram import Update, Message
 from telegram.ext import CallbackContext
@@ -34,3 +34,8 @@ def check_user(handler):
         return handler(update, context)
 
     return wrapper
+
+
+def get_admins() -> List[User]:
+    admins: List[User] = User.select().where(User.status == "admin")
+    return admins

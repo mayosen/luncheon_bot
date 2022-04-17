@@ -11,7 +11,7 @@ def hello_user(update: Update, context: CallbackContext):
     message.reply_text(
         text=f"Привет, <b>{message.from_user.full_name}</b>!\n\n"
              f"Я Ланч-бот, с моей помощью ты можешь заказать доставку еды на дом.\n\n"
-             f"Чтобы собрать новый заказ, используй команду /order",
+             f"Чтобы сделать заказ, используй команду /order",
     )
 
 
