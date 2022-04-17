@@ -25,7 +25,8 @@ def to_photo(update: Update, context: CallbackContext):
 
 
 def collect_photos(update: Update, context: CallbackContext):
-    update.message.reply_text("Пришлите фотографии. А когда закончишь, отправь /stop")
+    update.message.reply_text("Присылайте фотографии. А когда закончите, отправьте /stop, "
+                              "чтобы получить их file_id.")
     context.user_data["photo"] = []
 
     return COLLECT
@@ -45,7 +46,7 @@ def send_file_ids(update: Update, context: CallbackContext):
         text = "\n\n".join(prepared)
         update.message.reply_text(text)
     else:
-        update.message.reply_text("Отменено.")
+        update.message.reply_text("Вы не отправили фотографии.")
 
     return ConversationHandler.END
 

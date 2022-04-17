@@ -6,11 +6,11 @@ from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPh
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
-import keyboards.order as keyboards
 from filters.cancel import cancel_filter
-from keyboards.admin import approve_keyboard
-from database.api import check_user
 from database.models import User, Product, Order, OrderItem
+from database.api import check_user, get_admins
+from keyboards.admin import approve_keyboard
+import keyboards.order as keyboards
 
 MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
 FEEDBACK = 0
@@ -28,10 +28,10 @@ def new_order(update: Update, context: CallbackContext):
         message = update.message
         to_process = update.message
 
-    admins: List[User] = User.select().where(User.status == "admin")
+    admins = get_admins()
     if not admins:
         message.reply_text("Извините, на данный момент нет активных администраторов, которые могут "
-                           "принять ваш заказ.\nПожалуйста, вернитесь позднее.")
+                           "принять ваш заказ.\n\nПожалуйста, вернитесь позднее.")
         return ConversationHandler.END
 
     message.reply_text(
@@ -305,7 +305,7 @@ def create_order(query: CallbackQuery, user_data: dict):
                        f"Вам будут приходить уведомления об изменении его статуса.")
     user_data.clear()
 
-    admins: List[User] = User.select().where(User.status == "admin")
+    admins = get_admins()
     positions = format_items(products)
     text = (
         f"Новый заказ <code>#{order.id}</code>\n\n"
@@ -404,7 +404,7 @@ def create_feedback(update: Update, context: CallbackContext):
     order.attachments = ", ".join(feedback["attachments"])
     order.save()
 
-    admins: List[User] = User.select().where(User.status == "admin")
+    admins = get_admins()
     media = [InputMediaPhoto(photo) for photo in feedback["attachments"]]
     context.user_data.clear()
 

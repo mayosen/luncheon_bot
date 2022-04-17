@@ -2,17 +2,15 @@ from telegram import Update
 from telegram.ext import Dispatcher, CallbackContext
 from telegram.ext import Filters, MessageHandler
 
+from utils.literals import COMMANDS_HINT
+
 
 def random_command(update: Update, context: CallbackContext):
-    update.message.reply_text("Неизвестная команда.\n\nИспользуйте одну из следующих команд:\n"
-                              "/order - сделать новый заказ\n"
-                              "/me - просмотреть ваш профиль\n")
+    update.message.reply_text("Неизвестная команда.\n\n" + COMMANDS_HINT)
 
 
 def random_message(update: Update, context: CallbackContext):
-    update.message.reply_text("Я не понимаю вас.\n\nИспользуйте одну из следующих команд:\n"
-                              "/order - сделать новый заказ\n"
-                              "/me - просмотреть ваш профиль\n")
+    update.message.reply_text("Я не понимаю вас.\n\n" + COMMANDS_HINT)
 
 
 def register(dp: Dispatcher):

@@ -1,7 +1,7 @@
 from telegram import BotCommand, BotCommandScope
 from telegram import Bot
 
-from config import ADMINS
+from database.api import get_admins
 
 
 def set_default_commands(bot: Bot):
@@ -15,5 +15,6 @@ def set_default_commands(bot: Bot):
 
 
 def on_startup_notification(bot: Bot):
-    admin = ADMINS[0]
-    bot.send_message(chat_id=admin, text="<i>Бот запущен.</i>")
+    admins = get_admins()
+    for admin in admins:
+        bot.send_message(chat_id=admin.id, text="<i>Бот запущен.</i>")

@@ -1,9 +1,10 @@
 from telegram import Message
 from telegram.ext import MessageFilter
 
-from config import ADMINS
+from database.api import get_admins
 
 
 class IsAdmin(MessageFilter):
     def filter(self, message: Message):
-        return message.from_user.id in ADMINS
+        admins = get_admins()
+        return message.from_user.id in [admin.id for admin in admins]
