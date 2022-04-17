@@ -378,11 +378,14 @@ def get_feedback(update: Update, context: CallbackContext):
     message = update.message
 
     if message.photo:
-        feedback["attachments"].append(message.photo[-1].file_id)
         message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
+        feedback["attachments"].append(message.photo[-1].file_id)
+        if message.caption:
+            feedback["text"].append("photo: " + message.caption)
+
     elif message.text:
-        feedback["text"].append(message.text)
         message.reply_chat_action(ChatAction.TYPING)
+        feedback["text"].append(message.text)
 
 
 def create_feedback(update: Update, context: CallbackContext):
