@@ -17,12 +17,8 @@ def login(update: Update, context: CallbackContext):
             if admin.status != "admin":
                 admin.status = "admin"
                 admin.save()
-                message.reply_text(f"{message.from_user.full_name}, вы вошли в систему как <b>{admin.status}</b>.")
-            else:
-                message.reply_text(f"{message.from_user.full_name}, вы уже <b>{admin.status}</b>.")
-
-            # TODO: admin /help
-
+                message.reply_text(f"{message.from_user.full_name}, вы вошли в систему как <b>{admin.status}</b>.\n\n"
+                                   f"Про режим администратора: /help")
             return
 
     message.reply_text("Неизвестная команда.\n\n" + COMMANDS_HINT)
