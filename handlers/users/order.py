@@ -48,6 +48,16 @@ def new_order(update: Update, context: CallbackContext):
     return MAIN_DISH
 
 
+def repeat_order(update: Update, context: CallbackContext):
+    order_id = int(re.match(r"user:reorder:(\d+)", update.callback_query.data).group(1))
+
+    order = Order.get(id=order_id)
+    products: List[Product] = [item.product for item in order.items]
+    context.user_data["cart"] = list(products)
+
+    return complete_cart(update, context)
+
+
 def cancel_order(update: Update, context: CallbackContext):
     context.user_data.clear()
     message = update.callback_query.message if update.callback_query else update.message
@@ -127,12 +137,13 @@ def complete_cart(update: Update, context: CallbackContext):
     query = update.callback_query
     user_data = context.user_data
 
-    if query.data != "user:next_state":
-        index = int(re.match(r"user:cart:(\w+)", query.data).group(1))
+    if re.match(r"user:cart:\d+", query.data):
+        index = int(re.match(r"user:cart:(\d+)", query.data).group(1))
         product = user_data["cache"][index]
         user_data["cart"].append(product[index])
 
-    del user_data["cache"]
+    if "cache" in user_data:
+        del user_data["cache"]
     message = query.message
     message.edit_reply_markup()
 
@@ -319,6 +330,7 @@ def register(dp: Dispatcher):
         entry_points=[
             CommandHandler("order", new_order),
             MessageHandler(Filters.regex(re.compile(r".*(новый|заказ).*", re.IGNORECASE)), new_order),
+            CallbackQueryHandler(pattern=r"^user:reorder:\d+$", callback=repeat_order),
         ],
         states={
             MAIN_DISH: [
