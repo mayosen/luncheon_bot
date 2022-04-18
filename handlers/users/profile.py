@@ -62,7 +62,7 @@ def open_order(update: Update, context: CallbackContext):
     query.answer()
     order_id = int(re.match(r"user:order:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
-    products: List[Product] = [Product.get(id=item.order) for item in order.items]
+    products: List[Product] = [item.product for item in order.items]
 
     text = (
         f"Заказ <code>#{order.id}</code>\n"
