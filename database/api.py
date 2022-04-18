@@ -1,6 +1,6 @@
 from typing import Union, List
 
-from telegram import Update, Message
+from telegram import Update
 from telegram.ext import CallbackContext
 from peewee import DoesNotExist
 
