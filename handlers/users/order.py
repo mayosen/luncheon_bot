@@ -2,7 +2,7 @@ import re
 from typing import List, Union
 from datetime import datetime
 
-from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPhoto, ChatAction
+from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPhoto
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
@@ -10,12 +10,12 @@ from filters.cancel import cancel_filter
 from database.models import User, Product, Order, OrderItem
 from database.api import check_user, get_admins
 from keyboards.admin import approve_keyboard
+from keyboards.feedback import feedback_order_keyboard
 import keyboards.order as keyboards
 from utils.formatting import format_order
 from .profile import incorrect_phone, update_phone, update_address
 
 MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
-FEEDBACK = 0
 
 
 @check_user
@@ -309,98 +309,9 @@ def rate_order(update: Update, context: CallbackContext):
         query.answer("Рады стараться для вас!")
 
     query.edit_message_reply_markup(
-        reply_markup=keyboards.feedback_order_keyboard(order_id),
+        reply_markup=feedback_order_keyboard(order_id),
     )
     query.message.reply_text("Спасибо за заказ! Ждем вас еще!")
-
-
-def feedback_order(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.edit_message_reply_markup()
-    query.message.reply_text(
-        text="Ваш отзыв очень важен для нас.\n\n"
-             "О чем можно написать:\n"
-             "- разнообразие меню\n"
-             "- качество блюд\n"
-             "- скорость доставки\n\n"
-             "Кроме того, вы можете прислать фотографию вашего заказа."
-    )
-    sent: Message = query.message.reply_text(
-        text="Отправьте необходимые сообщения и вложения, а затем "
-             "нажмите кнопку <b>Отправить отзыв</b>\n\n"
-             "Для отмены введите /cancel",
-        reply_markup=keyboards.create_feedback_keyboard,
-    )
-    context.user_data["feedback_message"] = sent
-
-    order_id = int(re.match(r"user:feedback:(\d+)", query.data).group(1))
-    order = Order.get(id=order_id)
-    context.user_data["feedback"] = {
-        "order": order,
-        "text": [],
-        "attachments": [],
-    }
-
-    return FEEDBACK
-
-
-def get_feedback(update: Update, context: CallbackContext):
-    feedback: dict = context.user_data["feedback"]
-    message = update.message
-
-    if message.photo:
-        message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
-        feedback["attachments"].append(message.photo[-1].file_id)
-        if message.caption:
-            feedback["text"].append("photo: " + message.caption)
-
-    elif message.text:
-        message.reply_chat_action(ChatAction.TYPING)
-        feedback["text"].append(message.text)
-
-
-def create_feedback(update: Update, context: CallbackContext):
-    update.callback_query.edit_message_reply_markup()
-    update.callback_query.message.reply_text("Спасибо за подробный отзыв, мы учтем ваши пожелания!")
-
-    feedback: dict = context.user_data["feedback"]
-    order: Order = feedback["order"]
-    order.feedback = ". \n".join(feedback["text"])
-    order.attachments = ", ".join(feedback["attachments"])
-    order.save()
-
-    admins = get_admins()
-    media = [InputMediaPhoto(photo) for photo in feedback["attachments"]]
-    context.user_data.clear()
-
-    for admin in admins:
-        context.bot.send_message(
-            chat_id=admin.id,
-            text=f"Новый отзыв для заказа <code>#{order.id}</code>\n\n"
-                 f"{order.feedback}",
-        )
-
-        if media:
-            context.bot.send_media_group(
-                chat_id=admin.id,
-                media=media,
-            )
-
-        # TODO: Кнопки: Открыть заказ, Обратная связь
-
-    return ConversationHandler.END
-
-
-def cancel_feedback(update: Update, context: CallbackContext):
-    update.message.reply_text("Отзыв отменен.")
-    sent: Message = context.user_data["feedback_message"]
-    context.bot.edit_message_reply_markup(
-        chat_id=sent.chat_id,
-        message_id=sent.message_id,
-    )
-    context.user_data.clear()
-
-    return ConversationHandler.END
 
 
 def register(dp: Dispatcher):
@@ -449,21 +360,3 @@ def register(dp: Dispatcher):
 
     dp.add_handler(order_handler)
     dp.add_handler(CallbackQueryHandler(pattern=r"^user:rate:\d+:\d+$", callback=rate_order))
-
-    feedback_handler = ConversationHandler(
-        entry_points=[
-            CallbackQueryHandler(pattern=r"^user:feedback:\d+$", callback=feedback_order),
-        ],
-        states={
-            FEEDBACK: [
-                MessageHandler((Filters.text & ~Filters.command & ~cancel_filter) | Filters.photo, get_feedback),
-                CallbackQueryHandler(pattern=r"^user:feedback:create$", callback=create_feedback),
-            ]
-        },
-        fallbacks=[
-            CommandHandler("cancel", cancel_feedback),
-            MessageHandler(cancel_filter, cancel_feedback),
-        ],
-    )
-
-    dp.add_handler(feedback_handler)

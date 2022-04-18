@@ -77,13 +77,14 @@ def order_keyboard(order_id: int, feedback_exists: bool) -> InlineKeyboardMarkup
         [
             InlineKeyboardButton(
                 text="Повторить заказ",
-                callback_data="1",
+                callback_data=f"user:reorder:{order_id}",
             ),
         ],
         [
             InlineKeyboardButton(
                 text="Посмотреть отзыв" if feedback_exists else "Добавить отзыв",
-                callback_data="1",
+                callback_data=f"user:feedback:existing:{order_id}"
+                if feedback_exists else f"user:feedback:{order_id}",
             ),
         ],
     ]
