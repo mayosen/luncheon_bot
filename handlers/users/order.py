@@ -49,11 +49,12 @@ def new_order(update: Update, context: CallbackContext):
 
 
 def repeat_order(update: Update, context: CallbackContext):
-    order_id = int(re.match(r"user:reorder:(\d+)", update.callback_query.data).group(1))
-
+    query = update.callback_query
+    order_id = int(re.match(r"user:reorder:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
     products: List[Product] = [item.product for item in order.items]
     context.user_data["cart"] = list(products)
+    query.message.reply_text("Введите /cancel для отмены заказа.")
 
     return complete_cart(update, context)
 

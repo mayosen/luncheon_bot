@@ -41,7 +41,7 @@ def order_history_keyboard(current_index: int, orders: List[Order]) -> InlineKey
     for index in range(current_index, current_index + right_delta):
         order = orders[index]
         date = format_date(order.created)
-        text = f"[{index}] Заказ #{order.id} от {date}"
+        text = f"[{index + 1}] Заказ #{order.id} от {date}"
         keyboard.append(
             [
                 InlineKeyboardButton(
