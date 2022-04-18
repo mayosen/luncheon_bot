@@ -2,6 +2,9 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
+    left_border = (index == 0)
+    right_border = (index == products_len - 1)
+
     buttons = [
         [
             InlineKeyboardButton(
@@ -17,12 +20,12 @@ def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(
-                text="×" if index == 0 else "<",
-                callback_data="user:index:" + ("pass" if index == 0 else f"{index - 1}"),
+                text="×" if left_border else "<",
+                callback_data="user:index:" + ("pass" if left_border else f"{index - 1}"),
             ),
             InlineKeyboardButton(
-                text="×" if index == products_len - 1 else ">",
-                callback_data="user:index:" + ("pass" if index == products_len - 1 else f"{index + 1}"),
+                text="×" if right_border else ">",
+                callback_data="user:index:" + ("pass" if right_border else f"{index + 1}"),
             ),
         ],
     ]
@@ -68,6 +71,7 @@ address_keyboard = InlineKeyboardMarkup(
 
 def order_action_keyboard(empty_cart=False) -> InlineKeyboardMarkup:
     keyboard = []
+
     if not empty_cart:
         keyboard.append(
             [
@@ -75,22 +79,26 @@ def order_action_keyboard(empty_cart=False) -> InlineKeyboardMarkup:
                     text="Подтвердить заказ",
                     callback_data="user:confirm",
                 ),
-            ],
+            ]
         )
 
-    keyboard.append([
+    keyboard.append(
+        [
             InlineKeyboardButton(
                 text="Собрать заказ заново",
                 callback_data="user:reorder",
             ),
-    ])
+        ]
+    )
 
-    keyboard.append([
-        InlineKeyboardButton(
-            text="Отменить заказ",
-            callback_data="user:cancel",
-        ),
-    ])
+    keyboard.append(
+        [
+            InlineKeyboardButton(
+                text="Отменить заказ",
+                callback_data="user:cancel",
+            ),
+        ]
+    )
 
     return InlineKeyboardMarkup(keyboard)
 
@@ -99,25 +107,9 @@ def rate_order_keyboard(order_id: int) -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton(
-                text="1",
-                callback_data=f"user:rate:1:{order_id}",
-            ),
-            InlineKeyboardButton(
-                text="2",
-                callback_data=f"user:rate:2:{order_id}",
-            ),
-            InlineKeyboardButton(
-                text="3",
-                callback_data=f"user:rate:3:{order_id}",
-            ),
-            InlineKeyboardButton(
-                text="4",
-                callback_data=f"user:rate:4:{order_id}",
-            ),
-            InlineKeyboardButton(
-                text="5",
-                callback_data=f"user:rate:5:{order_id}",
-            ),
+                text=str(rate),
+                callback_data=f"user:rate:{order_id}:{rate}"
+            ) for rate in range(1, 6)
         ]
     ]
 

@@ -6,6 +6,7 @@ from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, C
 
 from filters.cancel import cancel_filter
 from database.models import Order, User
+from database.api import get_admins
 import keyboards.admin as keyboards
 from keyboards.order import rate_order_keyboard
 
@@ -50,8 +51,11 @@ def reject_order(update: Update, context: CallbackContext):
         return
 
     context.user_data["to_reject"] = order
-    query.message.reply_text(f"{query.from_user.full_name}, введите причину отказа.\n\n"
-                             f"Для отмены введите /cancel")
+    query.message.reply_text(
+        f"{query.from_user.full_name}, введите причину отказа.\n\n"
+        f"Для отмены введите /cancel\n"
+        f"Количество администраторов на смене: {len(get_admins())}"
+    )
 
     return REJECT
 
@@ -63,9 +67,9 @@ def reject_reason(update: Update, context: CallbackContext):
     order.status = "отклонен"
     order.feedback = reason
     order.save()
-    update.message.reply_text("Заказ отменен.")
+    update.message.reply_text("Заказ отклонен.")
 
-    user: User = order.user
+    user = order.user
     context.bot.send_message(
         chat_id=user.id,
         text=f"{user.name}, ваш заказ <code>#{order.id}</code> отклонен.\n\n"
@@ -78,9 +82,23 @@ def reject_reason(update: Update, context: CallbackContext):
 def cancel_reject(update: Update, context: CallbackContext):
     order: Order = context.user_data["to_reject"]
     del context.user_data["to_reject"]
-    order.status = "подтверждение"
-    order.save()
-    update.message.reply_text(f"Заказ <code>#{order.id}</code> будет передан другому администратору.")
+
+    if len(get_admins()) <= 1:
+        order.status = "отклонен"
+        order.feedback = "Единственный администратор на смене отклонил заказ"
+        order.save()
+        update.message.reply_text(f"Заказ <code>#{order.id}</code> отменен, "
+                                  f"так как нет других активных администраторов на смене.")
+        user = order.user
+        context.bot.send_message(
+            chat_id=user.id,
+            text=f"{user.name}, ваш заказ <code>#{order.id}</code> отклонен.\n\n"
+                 f"Причина: нет активных администраторов",
+        )
+    else:
+        order.status = "подтверждение"
+        order.save()
+        update.message.reply_text(f"Заказ <code>#{order.id}</code> будет передан другому администратору.")
 
     return ConversationHandler.END
 

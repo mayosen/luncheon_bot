@@ -330,8 +330,8 @@ def create_order(query: CallbackQuery, user_data: dict):
 def rate_order(update: Update, context: CallbackContext):
     query = update.callback_query
     data = re.match(r"user:rate:(\d+):(\d+)", query.data)
-    rate = int(data.group(1))
-    order_id = int(data.group(2))
+    order_id = int(data.group(1))
+    rate = int(data.group(2))
 
     order: Order = Order.get(id=order_id)
     order.rate = rate
@@ -484,7 +484,7 @@ def register(dp: Dispatcher):
     )
 
     dp.add_handler(order_handler)
-    dp.add_handler(CallbackQueryHandler(pattern=r"user:rate:\d+", callback=rate_order))
+    dp.add_handler(CallbackQueryHandler(pattern=r"user:rate:\d+:\d+", callback=rate_order))
 
     feedback_handler = ConversationHandler(
         entry_points=[

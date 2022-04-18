@@ -1,6 +1,5 @@
 from telegram import Update
 from telegram.ext import Dispatcher, CallbackContext, CommandHandler
-from telegram.ext import MessageHandler
 
 from database.api import check_user
 from database.models import User
@@ -19,7 +18,7 @@ def hello_user(update: Update, context: CallbackContext):
 def get_me(update: Update, context: CallbackContext):
     user = User.get(id=update.message.from_user.id)
     update.message.reply_text(
-        text=str(user),
+        text=f"{user.status}: {str(user)}",
     )
 
 
