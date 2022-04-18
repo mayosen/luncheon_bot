@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import Dispatcher, CallbackContext, CommandHandler
 
 from database.models import User
-from utils.literals import COMMANDS_HINT
+from utils.literals import Info
 from config import ADMIN_PASSWORD
 
 
@@ -22,7 +22,7 @@ def login(update: Update, context: CallbackContext):
                 f"Про режим администратора: /help")
             return
     else:
-        message.reply_text("Неизвестная команда.\n\n" + COMMANDS_HINT)
+        message.reply_text("Неизвестная команда.\n\n" + Info.COMMANDS_HINT)
 
 
 def logout(update: Update, context: CallbackContext):
@@ -34,7 +34,7 @@ def logout(update: Update, context: CallbackContext):
         user.save()
         message.reply_text(f"{message.from_user.full_name}, вы вошли в систему как <b>{user.status}</b>.")
     else:
-        message.reply_text("Неизвестная команда.\n\n" + COMMANDS_HINT)
+        message.reply_text("Неизвестная команда.\n\n" + Info.COMMANDS_HINT)
 
 
 def register(dp: Dispatcher):

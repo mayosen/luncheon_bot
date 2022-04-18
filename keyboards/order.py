@@ -1,4 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from utils.literals import Symbols
 
 
 def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
@@ -20,11 +21,11 @@ def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(
-                text="×" if left_border else "<",
+                text=Symbols.BORDER if left_border else Symbols.PREVIOUS,
                 callback_data="user:index:" + ("pass" if left_border else f"{index - 1}"),
             ),
             InlineKeyboardButton(
-                text="×" if right_border else ">",
+                text=Symbols.BORDER if right_border else Symbols.NEXT,
                 callback_data="user:index:" + ("pass" if right_border else f"{index + 1}"),
             ),
         ],
@@ -116,11 +117,11 @@ def rate_order_keyboard(order_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def feedback_order_keyboard(order_id: int) -> InlineKeyboardMarkup:
+def feedback_order_keyboard(order_id: int, change=False) -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton(
-                text="Оставить отзыв",
+                text="Изменить отзыв" if change else "Оставить отзыв",
                 callback_data=f"user:feedback:{order_id}",
             )
         ]

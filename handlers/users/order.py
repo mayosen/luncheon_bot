@@ -11,6 +11,8 @@ from database.models import User, Product, Order, OrderItem
 from database.api import check_user, get_admins
 from keyboards.admin import approve_keyboard
 import keyboards.order as keyboards
+from utils.formatting import format_order
+from .profile import incorrect_phone, update_phone, update_address
 
 MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
 FEEDBACK = 0
@@ -56,16 +58,15 @@ def cancel_order(update: Update, context: CallbackContext):
 
 def switch_product(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
-
     data = re.match(r"user:index:(\w+)", query.data).group(1)
+
     if data == "pass":
+        query.answer()
         return
     else:
         new_index = int(data)
 
-    user_data = context.user_data
-    products = user_data["cache"]
+    products = context.user_data["cache"]
     product = products[new_index]
 
     query.message.edit_media(
@@ -157,12 +158,6 @@ def complete_cart(update: Update, context: CallbackContext):
     return PHONE
 
 
-def incorrect_phone(update: Update, context: CallbackContext):
-    update.message.reply_text(
-        "Пожалуйста, введите корректный номер телефона. \n"
-        "Он нужен, чтобы связаться с вами в случае возникновения затруднений.")
-
-
 def enter_new_phone(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
@@ -182,16 +177,7 @@ def use_last_phone(update: Update, context: CallbackContext):
 
 def get_phone(update: Update, context: CallbackContext):
     message = update.message
-    phone = message.contact.phone_number if message.contact else message.text
-
-    if len(phone) == 10:
-        phone = "+7" + phone
-    elif len(phone) == 11:
-        phone = "+" + phone
-
-    user = User.get(id=message.from_user.id)
-    user.phone = phone
-    user.save()
+    user = update_phone(message)
 
     return to_address(message, user)
 
@@ -229,36 +215,17 @@ def use_last_address(update: Update, context: CallbackContext):
 
 def get_address(update: Update, context: CallbackContext):
     message = update.message
-
-    if message.location:
-        address = f"{message.location.latitude}, {message.location.longitude}"
-    else:
-        address = message.text
-
-    user = User.get(id=message.from_user.id)
-    user.address = address
-    user.save()
+    user = update_address(message)
 
     return validate_order(message, user, context.user_data)
-
-
-def format_items(products: List[Product]):
-    positions = "".join([f"- {product}\n" for product in products])
-    cost = sum([product.price for product in products])
-
-    return f"Позиции меню:\n{positions}\nСумма: <b>{cost}</b> р."
 
 
 def validate_order(update: Union[Message, CallbackQuery], user: User, user_data: dict):
     message = update if isinstance(update, Message) else update.message
     products: List[Product] = user_data["cart"]
-    positions = format_items(products)
 
     text = (
-        f"{update.from_user.full_name}, Ваш заказ\n\n"
-        f"Телефон: <code>{user.phone}</code>\n"
-        f"Адрес: <code>{user.address}</code>\n\n"
-        f"{positions}"
+        f"{update.from_user.full_name}, Ваш заказ\n\n" + format_order(user, products)
     )
 
     message.reply_text(
@@ -306,15 +273,12 @@ def create_order(query: CallbackQuery, user_data: dict):
     user_data.clear()
 
     admins = get_admins()
-    positions = format_items(products)
     text = (
         f"Новый заказ <code>#{order.id}</code>\n\n"
         f"Пользователь: {str(user)}\n"
-        f"Телефон: <code>{user.phone}</code>\n"
-        f"Адрес: <code>{user.address}</code>\n\n"
-        f"{positions}"
+        + format_order(user, products)
     )
-    # TODO: вынести в Order.format(self)
+
     # TODO: получение этого заказ через команду
 
     for admin in admins:
