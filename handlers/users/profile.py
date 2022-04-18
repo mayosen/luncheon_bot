@@ -154,13 +154,13 @@ def cancel_change(update: Update, context: CallbackContext):
 
 def register(dp: Dispatcher):
     dp.add_handler(CommandHandler("me", user_profile))
-    dp.add_handler(CallbackQueryHandler(pattern=r"user:history:\d+", callback=order_history))
-    dp.add_handler(CallbackQueryHandler(pattern=r"user:history:order:\w+", callback=switch_page))
-    dp.add_handler(CallbackQueryHandler(pattern=r"user:order:\d+", callback=open_order))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^user:history:\d+$", callback=order_history))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^user:history:order:(\d+|pass)$", callback=switch_page))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^user:order:\d+$", callback=open_order))
 
     phone_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(pattern=r"user:phone:\d+", callback=change_phone),
+            CallbackQueryHandler(pattern=r"^user:phone:\d+$", callback=change_phone),
         ],
         states={
             PHONE: [
@@ -178,7 +178,7 @@ def register(dp: Dispatcher):
 
     address_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(pattern=r"user:address:\d+", callback=change_address),
+            CallbackQueryHandler(pattern=r"^user:address:\d+$", callback=change_address),
         ],
         states={
             ADDRESS: [
