@@ -1,11 +1,11 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def feedback_order_keyboard(order_id: int, change=False) -> InlineKeyboardMarkup:
+def feedback_order_keyboard(order_id: int) -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton(
-                text="Изменить отзыв" if change else "Оставить отзыв",
+                text="Оставить отзыв",
                 callback_data=f"user:feedback:{order_id}",
             )
         ]
@@ -24,3 +24,16 @@ create_feedback_keyboard = InlineKeyboardMarkup(
         ]
     ]
 )
+
+
+def change_feedback_keyboard(order_id: int) -> InlineKeyboardMarkup:
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="Изменить отзыв",
+                callback_data=f"user:feedback:{order_id}",
+            )
+        ]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)

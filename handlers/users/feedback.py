@@ -8,7 +8,7 @@ from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, C
 from database.api import get_admins
 from database.models import Order
 from filters.cancel import cancel_filter
-from keyboards.feedback import create_feedback_keyboard
+from keyboards.feedback import create_feedback_keyboard, change_feedback_keyboard
 
 FEEDBACK = 0
 
@@ -111,7 +111,7 @@ def existing_feedback(update: Update, context: CallbackContext):
     text = order.feedback
     query.message.reply_text(
         text="Ваш отзыв\n\n" + text,
-        reply_markup=None,  # TODO: Кнопка изменить отзыв
+        reply_markup=change_feedback_keyboard(order_id),
     )
 
     if order.attachments:
