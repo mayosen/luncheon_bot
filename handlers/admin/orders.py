@@ -146,11 +146,11 @@ def set_order_status(update: Update, context: CallbackContext):
 
 
 def register(dp: Dispatcher):
-    dp.add_handler(CallbackQueryHandler(pattern=r"admin:approve:\d+", callback=approve_order))
-    dp.add_handler(CallbackQueryHandler(pattern=r"admin:status:\w+", callback=set_order_status))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^admin:approve:\d+$", callback=approve_order))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^admin:status:\w+:\d+$", callback=set_order_status))
     rejection_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(pattern=r"admin:reject:\d+", callback=reject_order),
+            CallbackQueryHandler(pattern=r"^admin:reject:\d+$", callback=reject_order),
         ],
         states={
             REJECT: [

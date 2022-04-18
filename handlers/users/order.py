@@ -448,16 +448,16 @@ def register(dp: Dispatcher):
     )
 
     dp.add_handler(order_handler)
-    dp.add_handler(CallbackQueryHandler(pattern=r"user:rate:\d+:\d+", callback=rate_order))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^user:rate:\d+:\d+$", callback=rate_order))
 
     feedback_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(pattern=r"user:feedback:\d+", callback=feedback_order),
+            CallbackQueryHandler(pattern=r"^user:feedback:\d+$", callback=feedback_order),
         ],
         states={
             FEEDBACK: [
                 MessageHandler((Filters.text & ~Filters.command & ~cancel_filter) | Filters.photo, get_feedback),
-                CallbackQueryHandler(pattern=r"user:feedback:create", callback=create_feedback),
+                CallbackQueryHandler(pattern=r"^user:feedback:create$", callback=create_feedback),
             ]
         },
         fallbacks=[
