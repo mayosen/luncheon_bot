@@ -16,25 +16,29 @@ FEEDBACK = 0
 def feedback_order(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
-    query.message.reply_text(
-        text="Ваш отзыв очень важен для нас.\n\n"
-             "О чем можно написать:\n"
-             "- разнообразие меню\n"
-             "- качество блюд\n"
-             "- скорость доставки\n\n"
-             "Кроме того, вы можете прислать фотографию вашего заказа."
-    )
+    user_data = context.user_data
+
+    if not query.data.endswith("re"):
+        query.message.reply_text(
+            text="Ваш отзыв очень важен для нас.\n\n"
+                 "О чем можно написать:\n"
+                 "- разнообразие меню\n"
+                 "- качество блюд\n"
+                 "- скорость доставки\n\n"
+                 "Кроме того, вы можете прислать фотографию вашего заказа."
+        )
+
     sent: Message = query.message.reply_text(
         text="Отправьте необходимые сообщения и вложения, а затем "
              "нажмите кнопку <b>Отправить отзыв</b>\n\n"
              "Для отмены введите /cancel",
         reply_markup=create_feedback_keyboard,
     )
-    context.user_data["feedback_message"] = sent
+    user_data["feedback_message"] = sent
 
     order_id = int(re.match(r"user:feedback:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
-    context.user_data["feedback"] = {
+    user_data["feedback"] = {
         "order": order,
         "text": [],
         "attachments": [],
@@ -123,7 +127,7 @@ def existing_feedback(update: Update, context: CallbackContext):
 def register(dp: Dispatcher):
     feedback_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(pattern=r"^user:feedback:\d+$", callback=feedback_order),
+            CallbackQueryHandler(pattern=r"^user:feedback:\d+(:re)?$", callback=feedback_order),
         ],
         states={
             FEEDBACK: [

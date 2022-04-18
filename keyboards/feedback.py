@@ -31,7 +31,7 @@ def change_feedback_keyboard(order_id: int) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(
                 text="Изменить отзыв",
-                callback_data=f"user:feedback:{order_id}",
+                callback_data=f"user:feedback:{order_id}:re",
             )
         ]
     ]

@@ -43,6 +43,7 @@ def order_history(update: Update, context: CallbackContext):
 
 def switch_page(update: Update, context: CallbackContext):
     query = update.callback_query
+    query.answer()
     data = re.match(r"user:history:order:(\w+)", query.data).group(1)
 
     if data == "pass":
