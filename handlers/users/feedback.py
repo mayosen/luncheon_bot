@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Dict
 
 from telegram import Update, InputMediaPhoto, Message, ChatAction
 from telegram.ext import Dispatcher, CallbackContext, Filters
@@ -48,7 +48,7 @@ def feedback_order(update: Update, context: CallbackContext):
 
 
 def get_feedback(update: Update, context: CallbackContext):
-    feedback: dict = context.user_data["feedback"]
+    feedback: Dict = context.user_data["feedback"]
     message = update.message
 
     if message.photo:
@@ -63,10 +63,17 @@ def get_feedback(update: Update, context: CallbackContext):
 
 
 def create_feedback(update: Update, context: CallbackContext):
-    update.callback_query.edit_message_reply_markup()
-    update.callback_query.message.reply_text("Спасибо за подробный отзыв, мы учтем ваши пожелания!")
+    query = update.callback_query
+    feedback: Dict = context.user_data["feedback"]
 
-    feedback: dict = context.user_data["feedback"]
+    if not (feedback["text"] or feedback["attachments"]):
+        query.answer()
+        query.message.reply_text("Пожалуйста, введите текст или прикрепите фотографию.\n\n"
+                                 "Для отмены отзыва введите /cancel")
+        return FEEDBACK
+
+    query.edit_message_reply_markup()
+    query.message.reply_text("Спасибо за подробный отзыв, мы учтем ваши пожелания!")
     order: Order = feedback["order"]
     order.feedback = ".\n".join(feedback["text"])
     order.attachments = ", ".join(feedback["attachments"])

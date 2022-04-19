@@ -7,6 +7,7 @@ from database.models import Product, User
 def format_items(products: List[Product]):
     positions = "".join([f"- {product}\n" for product in products])
     cost = sum([product.price for product in products])
+
     # TODO: Вынести сумму в отдельный заказ?
 
     return f"Позиции меню:\n{positions}\nСумма: <b>{cost}</b> р."
@@ -19,11 +20,9 @@ def format_order(user: User, products: List[Product]):
         f"Адрес: <code>{user.address}</code>\n\n"
         f"{positions}"
     )
+
     return text
 
 
 def format_date(date: datetime, full=False):
-    if full:
-        return date.strftime("%d.%m.%Y %H:%M")
-    else:
-        return date.strftime("%d.%m")
+    return date.strftime("%d.%m.%Y %H:%M") if full else date.strftime("%d.%m")

@@ -2,14 +2,14 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from utils.literals import Symbols
 
 
-def product_keyboard(index: int, products_len: int) -> InlineKeyboardMarkup:
+def product_keyboard(next_category: str, index: int, products_len: int) -> InlineKeyboardMarkup:
     left_border = (index == 0)
     right_border = (index == products_len - 1)
 
     buttons = [
         [
             InlineKeyboardButton(
-                text="Следующий этап",
+                text=f"Далее: {next_category}",
                 callback_data=f"user:next_state",
             )
         ],

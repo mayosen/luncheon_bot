@@ -1,5 +1,5 @@
 import re
-from typing import List, Union
+from typing import List, Union, Dict
 from datetime import datetime
 
 from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPhoto
@@ -12,8 +12,9 @@ from database.api import check_user, get_admins
 from keyboards.admin import approve_keyboard
 from keyboards.feedback import feedback_order_keyboard
 import keyboards.order as keyboards
-from utils.formatting import format_order
 from .profile import incorrect_phone, update_phone, update_address
+from utils.formatting import format_order
+from utils.literals import OrderStates, OrderState
 
 MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
 
@@ -43,7 +44,7 @@ def new_order(update: Update, context: CallbackContext):
         "- напиток\n\n"
         "/cancel - отменить заказ"
     )
-    process_state(to_process, "main_dish", "основное блюдо", context.user_data)
+    process_state(to_process, OrderStates.MAIN_DISH, context.user_data)
 
     return MAIN_DISH
 
@@ -77,15 +78,35 @@ def switch_product(update: Update, context: CallbackContext):
     else:
         new_index = int(data)
 
-    products = context.user_data["cache"]
+    user_data = context.user_data
+    products = user_data["cache"]
     product = products[new_index]
+    state: OrderState = user_data["state"]
 
     query.message.edit_media(
         media=InputMediaPhoto(
             media=product.photo,
             caption=f"{product.title}\nЦена: {product.price} р.",
         ),
-        reply_markup=keyboards.product_keyboard(new_index, len(products)),
+        reply_markup=keyboards.product_keyboard(state.next_category, new_index, len(products)),
+    )
+
+
+def process_state(update: Union[Message, CallbackQuery], state: OrderState, user_data: Dict):
+    message = update.message if isinstance(update, CallbackQuery) else update
+
+    products: List[Product] = Product.select().where(Product.category == state.category)
+    user_data["cache"] = products
+    user_data["state"] = state
+
+    index = 0
+    product = products[index]
+
+    message.reply_text(f"Выберите {state.choose}.")
+    message.reply_photo(
+        photo=product.photo,
+        caption=f"{product.title}\nЦена: {product.price} р.",
+        reply_markup=keyboards.product_keyboard(state.next_category, index, len(products)),
     )
 
 
@@ -99,29 +120,10 @@ def add_to_cart(update: Update, context: CallbackContext):
     query.answer(f"Добавлено в корзину:\n{product}")
 
 
-def process_state(update: Union[Message, CallbackQuery], category: str, alias: str, user_data: dict):
-    if isinstance(update, CallbackQuery):
-        message = update.message
-    else:
-        message = update
-
-    products: List[Product] = Product.select().where(Product.category == category)
-    user_data["cache"] = products
-    index = 0
-    product = products[index]
-
-    message.reply_text(f"Выберите {alias}.")
-    message.reply_photo(
-        photo=product.photo,
-        caption=f"{product.title}\nЦена: {product.price} р.",
-        reply_markup=keyboards.product_keyboard(index, len(products)),
-    )
-
-
 def ask_snack(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
-    process_state(query, "snack", "закуску", context.user_data)
+    process_state(query, OrderStates.SNACK, context.user_data)
 
     return SNACK
 
@@ -129,7 +131,7 @@ def ask_snack(update: Update, context: CallbackContext):
 def ask_drink(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
-    process_state(query, "drink", "напиток", context.user_data)
+    process_state(query, OrderStates.DRINK, context.user_data)
 
     return DRINK
 
@@ -138,13 +140,12 @@ def complete_cart(update: Update, context: CallbackContext):
     query = update.callback_query
     user_data = context.user_data
 
-    if re.match(r"user:cart:\d+", query.data):
-        index = int(re.match(r"user:cart:(\d+)", query.data).group(1))
+    match = re.match(r"user:cart:(\d+)", query.data)
+    if match:
+        index = int(match.group(1))
         product = user_data["cache"][index]
         user_data["cart"].append(product[index])
 
-    if "cache" in user_data:
-        del user_data["cache"]
     message = query.message
     message.edit_reply_markup()
 
@@ -232,7 +233,7 @@ def get_address(update: Update, context: CallbackContext):
     return validate_order(message, user, context.user_data)
 
 
-def validate_order(update: Union[Message, CallbackQuery], user: User, user_data: dict):
+def validate_order(update: Union[Message, CallbackQuery], user: User, user_data: Dict):
     message = update if isinstance(update, Message) else update.message
     products: List[Product] = user_data["cart"]
 
@@ -261,7 +262,7 @@ def order_action(update: Update, context: CallbackContext):
         return cancel_order(update, context)
 
 
-def create_order(query: CallbackQuery, user_data: dict):
+def create_order(query: CallbackQuery, user_data: Dict):
     user = User.get(id=query.from_user.id)
 
     order: Order = Order.create(

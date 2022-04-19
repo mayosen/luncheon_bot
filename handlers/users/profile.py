@@ -35,10 +35,13 @@ def order_history(update: Update, context: CallbackContext):
     user = User.get(id=query.from_user.id)
     orders = get_user_completed_orders(user)
 
-    query.message.reply_text(
-        text=f"{query.from_user.full_name}, ваши заказы",
-        reply_markup=keyboards.order_history_keyboard(0, orders),
-    )
+    if len(orders) > 0:
+        query.message.reply_text(
+            text=f"{query.from_user.full_name}, ваши заказы",
+            reply_markup=keyboards.order_history_keyboard(0, orders),
+        )
+    else:
+        query.message.reply_text(f"{query.from_user.full_name}, у вас еще нет заказов.")
 
 
 def switch_page(update: Update, context: CallbackContext):
