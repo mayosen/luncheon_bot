@@ -70,6 +70,7 @@ def cancel_order(update: Update, context: CallbackContext):
 
 def switch_product(update: Update, context: CallbackContext):
     query = update.callback_query
+    query.answer()
     data = re.match(r"user:index:(\w+)", query.data).group(1)
 
     if data == "pass":

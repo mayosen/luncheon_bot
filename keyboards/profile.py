@@ -35,7 +35,7 @@ def profile_keyboard(user_id: int) -> InlineKeyboardMarkup:
 def order_history_keyboard(current_index: int, orders: List[Order]) -> InlineKeyboardMarkup:
     keyboard = []
     orders_len = len(orders)
-    orders_per_page = 5
+    orders_per_page = 7
     right_delta = orders_per_page if (orders_len - current_index > orders_per_page) else orders_len - current_index
 
     for index in range(current_index, current_index + right_delta):
