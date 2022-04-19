@@ -68,8 +68,7 @@ def create_feedback(update: Update, context: CallbackContext):
 
     if not (feedback["text"] or feedback["attachments"]):
         query.answer()
-        query.message.reply_text("Пожалуйста, введите текст или прикрепите фотографию.\n\n"
-                                 "Для отмены отзыва введите /cancel")
+        query.message.reply_text("Пожалуйста, введите текст или прикрепите фотографию.")
         return FEEDBACK
 
     query.edit_message_reply_markup()
