@@ -9,6 +9,15 @@ from filters.cancel import cancel_filter
 COLLECT = 0
 
 
+def get_help(update: Update, context: CallbackContext):
+    update.message.reply_text(
+        text="Команды администратора\n\n"
+             "/login \"password\" - вход с паролем\n"
+             "/logout - выход",
+        # TODO: Дополнить
+    )
+
+
 def to_photo(update: Update, context: CallbackContext):
     if not context.args:
         update.message.reply_text("Отправьте <b>file_id</b> как аргумент команды.")
@@ -59,6 +68,7 @@ def cancel_collecting(update: Update, context: CallbackContext):
 
 
 def register(dp: Dispatcher):
+    dp.add_handler(CommandHandler("help", get_help))
     dp.add_handler(CommandHandler("file", to_photo, filters=is_admin))
 
     photo_handler = ConversationHandler(

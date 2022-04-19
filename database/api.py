@@ -1,11 +1,10 @@
 from typing import Union, List
 
-from telegram import Update, Message
+from telegram import Update
 from telegram.ext import CallbackContext
-
 from peewee import DoesNotExist
 
-from .models import User
+from .models import User, Order
 
 
 def get_user(user_id: int) -> Union[User, None]:
@@ -39,3 +38,8 @@ def check_user(handler):
 def get_admins() -> List[User]:
     admins: List[User] = User.select().where(User.status == "admin")
     return admins
+
+
+def get_user_completed_orders(user: User) -> List[Order]:
+    orders: List[Order] = user.orders.where(Order.status == "выполнен")
+    return orders

@@ -8,7 +8,7 @@ def set_default_commands(bot: Bot):
     bot.set_my_commands(
         [
             BotCommand("order", "Сделать заказ"),
-            BotCommand("cancel", "Отменить заказ"),
+            BotCommand("cancel", "Отменить действие"),
             BotCommand("me", "Ваш профиль"),
         ]
     )
