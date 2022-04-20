@@ -293,8 +293,6 @@ def create_order(query: CallbackQuery, user_data: Dict):
         + format_order(user, products)
     )
 
-    # TODO: получение этого заказ через команду
-
     for admin in admins:
         message.bot.send_message(
             chat_id=admin.id,

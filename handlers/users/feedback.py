@@ -94,8 +94,6 @@ def create_feedback(update: Update, context: CallbackContext):
                 media=media,
             )
 
-        # TODO: Кнопки: Открыть заказ, Обратная связь
-
     return ConversationHandler.END
 
 
