@@ -21,9 +21,7 @@ def check_user(handler):
         from_user = update.message.from_user if update.message else update.callback_query.from_user
 
         if not get_user(user_id=from_user.id):
-            username = from_user.username.lower()
-            if not username:
-                username = ""
+            username = from_user.username.lower() if from_user.username else ""
 
             User.create(
                 id=from_user.id,

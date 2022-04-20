@@ -99,7 +99,7 @@ def create_feedback(update: Update, context: CallbackContext):
 
 
 def cancel_feedback(update: Update, context: CallbackContext):
-    update.message.reply_text("Отзыв отменен.")
+    update.message.reply_text("Отзыв отменен.\nВы можете оставить его через меню заказов.")
     sent: Message = context.user_data["feedback_message"]
     context.bot.edit_message_reply_markup(
         chat_id=sent.chat_id,
