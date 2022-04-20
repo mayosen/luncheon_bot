@@ -102,7 +102,7 @@ def update_phone(message: Message):
 
     if len(phone) == 10:
         phone = "+7" + phone
-    elif len(phone) == 11:
+    elif len(phone) == 11 and phone.startswith("7"):
         phone = "+" + phone
 
     user = User.get(id=message.from_user.id)
