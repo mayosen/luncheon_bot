@@ -70,6 +70,7 @@ def cancel_order(update: Update, context: CallbackContext):
 
 def switch_product(update: Update, context: CallbackContext):
     query = update.callback_query
+    query.answer()
     data = re.match(r"user:index:(\w+)", query.data).group(1)
 
     if data == "pass":
@@ -291,8 +292,6 @@ def create_order(query: CallbackQuery, user_data: Dict):
         f"Пользователь: {str(user)}\n"
         + format_order(user, products)
     )
-
-    # TODO: получение этого заказ через команду
 
     for admin in admins:
         message.bot.send_message(

@@ -5,7 +5,7 @@ from telegram import Update, MessageEntity, Message
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
-from database.api import check_user, get_user_completed_orders
+from database.api import check_user, get_completed_orders
 from database.models import User, Order, Product
 from filters.cancel import cancel_filter
 import keyboards.profile as keyboards
@@ -23,7 +23,7 @@ def user_profile(update: Update, context: CallbackContext):
         text=f"{status} {str(user)}\n\n"
              f"Телефон: <code>{user.phone}</code>\n"
              f"Адрес: <code>{user.address}</code>\n\n"
-             f"Заказов: {len(get_user_completed_orders(user))}",
+             f"Заказов: {len(get_completed_orders(user))}",
         reply_markup=keyboards.profile_keyboard(user.id),
     )
 
@@ -31,23 +31,25 @@ def user_profile(update: Update, context: CallbackContext):
 def order_history(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
+    user_id = query.from_user.id
 
-    user = User.get(id=query.from_user.id)
-    orders = get_user_completed_orders(user)
+    user = User.get(id=user_id)
+    orders = get_completed_orders(user)
 
     if len(orders) > 0:
         query.message.reply_text(
             text=f"{query.from_user.full_name}, ваши заказы",
-            reply_markup=keyboards.order_history_keyboard(0, orders),
+            reply_markup=keyboards.order_history_keyboard(user_id, orders, 0),
         )
     else:
-        query.message.reply_text(f"{query.from_user.full_name}, у вас еще нет заказов.")
+        query.message.reply_text(f"{query.from_user.full_name}, вы не сделали ни одного заказа.")
 
 
 def switch_page(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
-    data = re.match(r"user:history:order:(\w+)", query.data).group(1)
+    user_id = query.from_user.id
+    data = re.match(r"user:page:\d+:(\w+)", query.data).group(1)
 
     if data == "pass":
         query.answer()
@@ -55,10 +57,8 @@ def switch_page(update: Update, context: CallbackContext):
     else:
         new_index = int(data)
 
-    orders = get_user_completed_orders(User.get(id=query.from_user.id))
-    query.message.edit_reply_markup(
-        reply_markup=keyboards.order_history_keyboard(new_index, orders),
-    )
+    orders = get_completed_orders(User.get(id=user_id))
+    query.message.edit_reply_markup(keyboards.order_history_keyboard(user_id, orders, new_index))
 
 
 def open_order(update: Update, context: CallbackContext):
@@ -159,7 +159,7 @@ def cancel_change(update: Update, context: CallbackContext):
 def register(dp: Dispatcher):
     dp.add_handler(CommandHandler("me", user_profile))
     dp.add_handler(CallbackQueryHandler(pattern=r"^user:history:\d+$", callback=order_history))
-    dp.add_handler(CallbackQueryHandler(pattern=r"^user:history:order:(\d+|pass)$", callback=switch_page))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^user:page:\d+:(\d+|pass)$", callback=switch_page))
     dp.add_handler(CallbackQueryHandler(pattern=r"^user:order:\d+$", callback=open_order))
 
     phone_handler = ConversationHandler(

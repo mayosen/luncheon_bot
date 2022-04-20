@@ -1,17 +1,17 @@
-from telegram import BotCommand, BotCommandScope
+from telegram import BotCommand
 from telegram import Bot
 
 from database.api import get_admins
 
+DEFAULT_COMMANDS = [
+    BotCommand("order", "Сделать заказ"),
+    BotCommand("cancel", "Отменить действие"),
+    BotCommand("me", "Ваш профиль"),
+]
+
 
 def set_default_commands(bot: Bot):
-    bot.set_my_commands(
-        [
-            BotCommand("order", "Сделать заказ"),
-            BotCommand("cancel", "Отменить действие"),
-            BotCommand("me", "Ваш профиль"),
-        ]
-    )
+    bot.set_my_commands(DEFAULT_COMMANDS)
 
 
 def on_startup_notification(bot: Bot):

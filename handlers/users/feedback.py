@@ -68,8 +68,7 @@ def create_feedback(update: Update, context: CallbackContext):
 
     if not (feedback["text"] or feedback["attachments"]):
         query.answer()
-        query.message.reply_text("Пожалуйста, введите текст или прикрепите фотографию.\n\n"
-                                 "Для отмены отзыва введите /cancel")
+        query.message.reply_text("Пожалуйста, введите текст или прикрепите фотографию.")
         return FEEDBACK
 
     query.edit_message_reply_markup()
@@ -86,16 +85,15 @@ def create_feedback(update: Update, context: CallbackContext):
     for admin in admins:
         context.bot.send_message(
             chat_id=admin.id,
-            text=f"Новый отзыв для заказа <code>#{order.id}</code>\n\n"
-                 f"{order.feedback}",
+            text=f"Новый отзыв для заказа <code>#{order.id}</code>\n"
+                 f"Пользователь: {order.user}\n\n"
+                 + order.feedback
         )
         if media:
             context.bot.send_media_group(
                 chat_id=admin.id,
                 media=media,
             )
-
-        # TODO: Кнопки: Открыть заказ, Обратная связь
 
     return ConversationHandler.END
 
@@ -118,7 +116,6 @@ def existing_feedback(update: Update, context: CallbackContext):
 
     order_id = int(re.match(r"user:feedback:existing:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
-
     text = order.feedback
     query.message.reply_text(
         text="Ваш отзыв\n\n" + text,
