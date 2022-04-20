@@ -92,23 +92,23 @@ def view_user_history(update: Update, context: CallbackContext):
     orders = api.get_all_orders(user)
     query.message.reply_text(
         text="История заказов пользователя",
-        reply_markup=order_history_keyboard(0, orders, admin=True),
+        reply_markup=order_history_keyboard(user_id, orders, 0, admin=True),
     )
 
 
 def switch_page(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
-    data = re.match(r"admin:history:order:(\w+)", query.data).group(1)
+    data = re.match(r"admin:page:(\d+):(\w+)", query.data)
+    user_id = int(data.group(1))
+    new_index = data.group(2)
 
-    if data == "pass":
+    if new_index == "pass":
         query.answer()
         return
-    else:
-        new_index = int(data)
 
-    orders = api.get_all_orders(User.get(id=query.from_user.id))
-    query.message.edit_reply_markup(order_history_keyboard(new_index, orders, admin=True))
+    orders = api.get_all_orders(User.get(id=user_id))
+    query.message.edit_reply_markup(order_history_keyboard(user_id, orders, int(new_index), admin=True))
 
 
 def view_order_command(update: Update, context: CallbackContext):
@@ -203,7 +203,7 @@ def register(dp: Dispatcher):
 
     dp.add_handler(CommandHandler("user", view_user, filters=is_admin))
     dp.add_handler(CallbackQueryHandler(pattern=r"^admin:history:\d+$", callback=view_user_history))
-    dp.add_handler(CallbackQueryHandler(pattern=r"^admin:history:order:(\d+|pass)$", callback=switch_page))
+    dp.add_handler(CallbackQueryHandler(pattern=r"^admin:page:\d+:(\d+|pass)$", callback=switch_page))
     dp.add_handler(CallbackQueryHandler(pattern=r"^admin:order:\d+$", callback=view_order))
     dp.add_handler(CallbackQueryHandler(pattern=r"^admin:feedback:existing:\d+$", callback=view_feedback))
     dp.add_handler(CommandHandler("getorder", view_order_command, filters=is_admin))

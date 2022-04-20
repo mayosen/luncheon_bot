@@ -85,8 +85,9 @@ def create_feedback(update: Update, context: CallbackContext):
     for admin in admins:
         context.bot.send_message(
             chat_id=admin.id,
-            text=f"Новый отзыв для заказа <code>#{order.id}</code>\n\n"
-                 f"{order.feedback}",
+            text=f"Новый отзыв для заказа <code>#{order.id}</code>\n"
+                 f"Пользователь: {order.user}\n\n"
+                 + order.feedback
         )
         if media:
             context.bot.send_media_group(
