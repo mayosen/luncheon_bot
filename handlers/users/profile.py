@@ -56,9 +56,7 @@ def switch_page(update: Update, context: CallbackContext):
         new_index = int(data)
 
     orders = get_completed_orders(User.get(id=query.from_user.id))
-    query.message.edit_reply_markup(
-        reply_markup=keyboards.order_history_keyboard(new_index, orders),
-    )
+    query.message.edit_reply_markup(keyboards.order_history_keyboard(new_index, orders))
 
 
 def open_order(update: Update, context: CallbackContext):
