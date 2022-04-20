@@ -5,7 +5,7 @@ from telegram import Update, MessageEntity, Message
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
-from database.api import check_user, get_user_completed_orders
+from database.api import check_user, get_completed_orders
 from database.models import User, Order, Product
 from filters.cancel import cancel_filter
 import keyboards.profile as keyboards
@@ -23,7 +23,7 @@ def user_profile(update: Update, context: CallbackContext):
         text=f"{status} {str(user)}\n\n"
              f"Телефон: <code>{user.phone}</code>\n"
              f"Адрес: <code>{user.address}</code>\n\n"
-             f"Заказов: {len(get_user_completed_orders(user))}",
+             f"Заказов: {len(get_completed_orders(user))}",
         reply_markup=keyboards.profile_keyboard(user.id),
     )
 
@@ -33,7 +33,7 @@ def order_history(update: Update, context: CallbackContext):
     query.answer()
 
     user = User.get(id=query.from_user.id)
-    orders = get_user_completed_orders(user)
+    orders = get_completed_orders(user)
 
     if len(orders) > 0:
         query.message.reply_text(
@@ -55,7 +55,7 @@ def switch_page(update: Update, context: CallbackContext):
     else:
         new_index = int(data)
 
-    orders = get_user_completed_orders(User.get(id=query.from_user.id))
+    orders = get_completed_orders(User.get(id=query.from_user.id))
     query.message.edit_reply_markup(
         reply_markup=keyboards.order_history_keyboard(new_index, orders),
     )

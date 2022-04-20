@@ -43,3 +43,29 @@ def status_keyboard(order_id: int) -> InlineKeyboardMarkup:
     ]
 
     return InlineKeyboardMarkup(keyboard)
+
+
+def user_profile_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="История заказов",
+                callback_data=f"admin:history:{user_id}",
+            )
+        ]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def view_order_feedback(order_id: int) -> InlineKeyboardMarkup:
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="Посмотреть отзыв",
+                callback_data=f"admin:feedback:existing:{order_id}",
+            ),
+        ],
+    ]
+
+    return InlineKeyboardMarkup(keyboard)

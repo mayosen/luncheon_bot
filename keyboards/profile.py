@@ -32,11 +32,12 @@ def profile_keyboard(user_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def order_history_keyboard(current_index: int, orders: List[Order]) -> InlineKeyboardMarkup:
+def order_history_keyboard(current_index: int, orders: List[Order], admin=False) -> InlineKeyboardMarkup:
     keyboard = []
     orders_len = len(orders)
     orders_per_page = 7
     right_delta = orders_per_page if (orders_len - current_index > orders_per_page) else orders_len - current_index
+    scope = "admin" if admin else "user"
 
     for index in range(current_index, current_index + right_delta):
         order = orders[index]
@@ -46,7 +47,7 @@ def order_history_keyboard(current_index: int, orders: List[Order]) -> InlineKey
             [
                 InlineKeyboardButton(
                     text=text,
-                    callback_data=f"user:order:{order.id}"
+                    callback_data=f"{scope}:order:{order.id}"
                 )
             ]
         )
@@ -58,12 +59,12 @@ def order_history_keyboard(current_index: int, orders: List[Order]) -> InlineKey
         [
             InlineKeyboardButton(
                 text=Symbols.BORDER if left_border else Symbols.PREVIOUS,
-                callback_data="user:history:order:"
+                callback_data=f"{scope}:history:order:"
                               + ("pass" if left_border else f"{current_index - orders_per_page}"),
             ),
             InlineKeyboardButton(
                 text=Symbols.BORDER if right_border else Symbols.NEXT,
-                callback_data="user:history:order:"
+                callback_data=f"{scope}:history:order:"
                               + ("pass" if right_border else f"{current_index + orders_per_page}"),
             ),
         ]

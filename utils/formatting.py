@@ -4,17 +4,18 @@ from typing import List
 from database.models import Product, User
 
 
-def format_items(products: List[Product]):
-    positions = "".join([f"- {product}\n" for product in products])
+def format_items(products: List[Product], admin=False):
+    positions = [f"[id: {product.id}] {product}" for product in products] if admin \
+            else [f"- {product}" for product in products]
+
+    formatted = "\n".join(positions)
     cost = sum([product.price for product in products])
 
-    # TODO: Вынести сумму в отдельный заказ?
-
-    return f"Позиции меню:\n{positions}\nСумма: <b>{cost}</b> р."
+    return f"Позиции меню:\n{formatted}\n\nСумма: <b>{cost}</b> р."
 
 
-def format_order(user: User, products: List[Product]):
-    positions = format_items(products)
+def format_order(user: User, products: List[Product], admin=False):
+    positions = format_items(products, admin)
     text = (
         f"Телефон: <code>{user.phone}</code>\n"
         f"Адрес: <code>{user.address}</code>\n\n"

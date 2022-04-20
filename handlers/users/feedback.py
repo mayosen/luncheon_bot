@@ -117,7 +117,6 @@ def existing_feedback(update: Update, context: CallbackContext):
 
     order_id = int(re.match(r"user:feedback:existing:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
-
     text = order.feedback
     query.message.reply_text(
         text="Ваш отзыв\n\n" + text,
