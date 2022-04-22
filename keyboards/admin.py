@@ -69,3 +69,22 @@ def view_order_feedback(order_id: int) -> InlineKeyboardMarkup:
     ]
 
     return InlineKeyboardMarkup(keyboard)
+
+
+def block_user(user_id: int) -> InlineKeyboardMarkup:
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="Удалить пользователя",
+                callback_data=f"admin:user:delete:{user_id}",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="Оставить в базе",
+                callback_data=f"admin:user:pass:{user_id}",
+            ),
+        ],
+    ]
+
+    return InlineKeyboardMarkup(keyboard)

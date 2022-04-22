@@ -11,7 +11,7 @@ from database.models import Order, User, Product
 from filters import is_admin
 import keyboards.admin as keyboards
 from keyboards.profile import order_history_keyboard
-from utils.formatting import format_order, format_date
+from utils.formatting import format_order, format_date, format_user
 
 ADMIN_COMMANDS = [
     BotCommand("admins", "Список активных администраторов"),
@@ -70,18 +70,12 @@ def view_user(update: Update, context: CallbackContext):
 
     identifier = context.args[0]
     user = api.get_user(user_id=int(identifier)) if identifier.isdigit() else api.get_user(username=identifier)
+
     if not user:
         message.reply_text("Пользователь не найден.")
-        return
-
-    status = "Пользователь" if user.status == "user" else "Администратор"
-    update.message.reply_text(
-        text=f"{status} {str(user)}\n\n"
-             f"Телефон: <code>{user.phone}</code>\n"
-             f"Адрес: <code>{user.address}</code>\n\n"
-             f"Всего заказов: {len(api.get_all_orders(user))}",
-        reply_markup=keyboards.user_profile_keyboard(user.id) if user.orders else None,
-    )
+    else:
+        text = format_user(user)
+        message.reply_text(text, reply_markup=keyboards.user_profile_keyboard(user.id) if user.orders else None)
 
 
 def view_user_history(update: Update, context: CallbackContext):
