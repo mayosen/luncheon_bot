@@ -40,6 +40,11 @@ def get_admins() -> List[User]:
     return admins
 
 
+def get_users() -> List[User]:
+    admins: List[User] = User.select().where(User.status == "user")
+    return admins
+
+
 def get_completed_orders(user: User) -> List[Order]:
     orders: List[Order] = user.orders.where(Order.status == "выполнен")
     return orders

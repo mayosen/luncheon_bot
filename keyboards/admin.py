@@ -88,3 +88,15 @@ def block_user(user_id: int) -> InlineKeyboardMarkup:
     ]
 
     return InlineKeyboardMarkup(keyboard)
+
+
+mailing_keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(
+                text="Начать рассылку",
+                callback_data="admin:mailing:start",
+            )
+        ]
+    ]
+)

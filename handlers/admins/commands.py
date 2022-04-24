@@ -2,16 +2,21 @@ import re
 from typing import List
 from collections import Counter
 
-from telegram import Update, Message, BotCommand, InputMediaPhoto
-from telegram.ext import Dispatcher, CallbackContext
+from telegram import Update, Message, BotCommand, InputMediaPhoto, ChatAction
+from telegram.error import Unauthorized
+from telegram.ext import Dispatcher, CallbackContext, ConversationHandler, MessageHandler, Filters
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
 import database.api as api
 from database.models import Order, User, Product
 from filters import is_admin
+from filters.cancel import cancel_filter
+from .errors import ask_admins
 import keyboards.admin as keyboards
 from keyboards.profile import order_history_keyboard
 from utils.formatting import format_order, format_date, format_user
+
+MAILING = 0
 
 ADMIN_COMMANDS = [
     BotCommand("admins", "Список активных администраторов"),
@@ -19,6 +24,7 @@ ADMIN_COMMANDS = [
     BotCommand("getorder", "Карточка заказа"),
     BotCommand("rates", "Общий рейтинг заказов"),
     BotCommand("product", "Карточка продукта"),
+    BotCommand("mailing", "Рассылка пользователям"),
     BotCommand("logout", "Выход из режима администратора"),
 ]
 
@@ -32,6 +38,7 @@ def get_help(update: Update, context: CallbackContext):
              "/getorder <code>id</code> - карточка заказа\n"
              "/rates - общий рейтинг заказов\n"
              "/product <code>id</code> - карточка продукта\n"
+             "/mailing - рассылка пользователям\n"
              "/logout - выход из режима администратора\n\n"
     )
 
@@ -190,6 +197,95 @@ def view_product(update: Update, context: CallbackContext):
     )
 
 
+def ask_mailing(update: Update, context: CallbackContext):
+    message = update.message
+
+    # TODO: Для дебага рассылаю и админам, потом заменить на get_users
+
+    message.reply_text(f"Активных пользователей: {len(api.get_admins())}")
+    asking = message.reply_text(
+        text="Отправьте одно сообщение с фотографией или без.\n"
+             "При необходимости отредактируйте его, затем нажмите кнопку "
+             "<b>Начать рассылку</b>\n\n"
+             "Для отмены введите /cancel",
+        reply_markup=keyboards.mailing_keyboard,
+    )
+    context.user_data["mailing"] = {
+        "asking": asking,
+        "content": None,
+    }
+
+    return MAILING
+
+
+def cancel_mailing(update: Update, context: CallbackContext):
+    update.message.reply_text("Рассылка отменена.")
+    asking: Message = context.user_data["mailing"]["asking"]
+    context.bot.edit_message_reply_markup(
+        chat_id=asking.chat_id,
+        message_id=asking.message_id,
+    )
+    context.user_data.clear()
+
+    return ConversationHandler.END
+
+
+def get_mailing_content(update: Update, context: CallbackContext):
+    message = update.edited_message if update.edited_message else update.message
+    context.user_data["mailing"]["content"] = message
+
+
+def do_mailing(update: Update, context: CallbackContext):
+    query = update.callback_query
+    content: Message = context.user_data["mailing"]["content"]
+
+    if not content:
+        query.answer()
+        query.message.reply_text("Пожалуйста, введите текст или прикрепите фотографию.")
+        return
+
+    query.edit_message_reply_markup()
+    query.message.reply_chat_action(ChatAction.TYPING)
+    content_message = content
+    users = api.get_admins()  # TODO: Заменить на get_users()
+    fails = []
+    bot = context.bot
+
+    if content_message.photo:
+        photo = content_message.photo[-1].file_id,
+        caption = content_message.caption
+        for user in users:
+            try:
+                bot.send_photo(
+                    chat_id=user.id,
+                    photo=photo,
+                    caption=caption,
+                )
+            except Unauthorized:
+                fails.append(user)
+                continue
+    else:
+        text = content_message.text
+        for user in users:
+            try:
+                bot.send_message(
+                    chat_id=user.id,
+                    text=text,
+                )
+            except Unauthorized:
+                fails.append(user)
+                continue
+
+    context.user_data.clear()
+    query.message.reply_text(f"Рассылка закончена.\nНеудач при отправке: {len(fails)}")
+    admins = api.get_admins()
+
+    for user in fails:
+        ask_admins(user, admins, bot)
+
+    return ConversationHandler.END
+
+
 def register(dp: Dispatcher):
     dp.add_handler(CommandHandler("help", get_help, filters=is_admin))
     dp.add_handler(CommandHandler("admins", view_admins, filters=is_admin))
@@ -201,5 +297,29 @@ def register(dp: Dispatcher):
     dp.add_handler(CallbackQueryHandler(pattern=r"^admin:order:\d+$", callback=view_order))
     dp.add_handler(CallbackQueryHandler(pattern=r"^admin:feedback:existing:\d+$", callback=view_feedback))
     dp.add_handler(CommandHandler("getorder", view_order_command, filters=is_admin))
-
     dp.add_handler(CommandHandler("product", view_product, filters=is_admin))
+
+    mailing_handler = ConversationHandler(
+        entry_points=[
+            CommandHandler("mailing", ask_mailing, filters=is_admin),
+        ],
+        states={
+            MAILING: [
+                MessageHandler(
+                    filters=(
+                        (Filters.text & ~Filters.command & ~cancel_filter)
+                        | Filters.update.edited_message
+                        | Filters.photo
+                    ),
+                    callback=get_mailing_content,
+                ),
+                CallbackQueryHandler(pattern=r"^admin:mailing:start$", callback=do_mailing),
+            ]
+        },
+        fallbacks=[
+            CommandHandler("cancel", cancel_mailing),
+            MessageHandler(cancel_filter, cancel_mailing),
+        ],
+    )
+
+    dp.add_handler(mailing_handler)
