@@ -61,7 +61,7 @@ def error_dispatcher(update: Union[object, Update], context: CallbackContext):
 
 def unauthorized(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
-    user = get_user(user_id=user_id)
+    user = get_user(user_id)
     admins = get_admins()
     ask_admins(user, admins, context.bot)
     context.user_data.clear()
@@ -92,7 +92,7 @@ def on_user_action(update: Update, context: CallbackContext):
         return
 
     user_id = int(data.group(2))
-    user = get_user(user_id=user_id)
+    user = get_user(user_id)
 
     if user:
         user.delete_instance(recursive=True)

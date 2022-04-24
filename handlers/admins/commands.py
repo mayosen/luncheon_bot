@@ -20,7 +20,9 @@ MAILING = 0
 
 ADMIN_COMMANDS = [
     BotCommand("admins", "Список активных администраторов"),
+    BotCommand("users", "Список пользователей"),
     BotCommand("user", "Профиль пользователя"),
+    BotCommand("delete", "Удалить пользователя"),
     BotCommand("getorder", "Карточка заказа"),
     BotCommand("rates", "Общий рейтинг заказов"),
     BotCommand("product", "Карточка продукта"),
@@ -45,12 +47,22 @@ def get_help(update: Update, context: CallbackContext):
 
 def view_admins(update: Update, context: CallbackContext):
     admins = api.get_admins()
-    admin_mentions = [str(admin) for admin in admins]
+    admin_mentions = [f"{admin.name} {admin}" for admin in admins]
     text = []
     for number, admin in enumerate(admin_mentions):
         text.append(f"{number + 1} - {admin}")
 
     update.message.reply_text(f"Активных администраторов: {len(admin_mentions)}\n\n" + "\n".join(text))
+
+
+def view_users(update: Update, context: CallbackContext):
+    users = api.get_users()
+    user_mentions = [f"{user.name} {user}" for user in users]
+    text = []
+    for number, admin in enumerate(user_mentions):
+        text.append(f"{number + 1} - {admin}")
+
+    update.message.reply_text(f"Пользователей: {len(user_mentions)}\n\n" + "\n".join(text))
 
 
 def total_rates(update: Update, context: CallbackContext):
@@ -75,13 +87,13 @@ def view_user(update: Update, context: CallbackContext):
         message.reply_text("Отправьте аргументом команды <code>id</code> или <code>username</code> пользователя.")
         return
 
-    identifier = context.args[0]
-    user = api.get_user(user_id=int(identifier)) if identifier.isdigit() else api.get_user(username=identifier)
+    arg = context.args[0]
+    user = api.get_user(arg)
 
     if not user:
         message.reply_text("Пользователь не найден.")
     else:
-        text = format_user(user)
+        text = format_user(user, admin=True)
         message.reply_text(text, reply_markup=keyboards.user_profile_keyboard(user.id) if user.orders else None)
 
 
@@ -112,6 +124,23 @@ def switch_page(update: Update, context: CallbackContext):
     query.message.edit_reply_markup(order_history_keyboard(user_id, orders, int(new_index), admin=True))
 
 
+def delete_user(update: Update, context: CallbackContext):
+    message = update.message
+
+    if not context.args:
+        message.reply_text("Отправьте аргументом команды <code>id</code> пользователя.")
+        return
+
+    arg = context.args[0]
+    user = api.get_user(arg)
+
+    if not user:
+        message.reply_text("Пользователь не найден.")
+    else:
+        user.delete_instance(recursive=True)
+        message.reply_text("Пользователь удален.")
+
+
 def view_order_command(update: Update, context: CallbackContext):
     message = update.message
     if not context.args:
@@ -126,9 +155,8 @@ def view_order_command(update: Update, context: CallbackContext):
     order = api.get_order(int(order_id))
     if not order:
         message.reply_text("Заказ не найден.")
-        return
-
-    reply_with_order(message, order)
+    else:
+        reply_with_order(message, order)
 
 
 def view_order(update: Update, context: CallbackContext):
@@ -136,7 +164,6 @@ def view_order(update: Update, context: CallbackContext):
     query.answer()
     order_id = int(re.match(r"admin:order:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
-
     reply_with_order(query.message, order)
 
 
@@ -149,8 +176,8 @@ def reply_with_order(message: Message, order: Order):
             + ("" if order.rate == 0 else f"Оценка: {order.rate}\n") + "\n"
             + format_order(order, products, admin=True)
     )
-
     reply_markup = None
+
     if order.status == "отклонен":
         text += "\n\nЗаказ отклонен.\nПричина: " + (order.feedback if order.feedback else "не указано")
     elif order.feedback:
@@ -199,10 +226,7 @@ def view_product(update: Update, context: CallbackContext):
 
 def ask_mailing(update: Update, context: CallbackContext):
     message = update.message
-
-    # TODO: Для дебага рассылаю и админам, потом заменить на get_users
-
-    message.reply_text(f"Активных пользователей: {len(api.get_admins())}")
+    message.reply_text(f"Активных пользователей: {len(api.get_users())}")
     asking = message.reply_text(
         text="Отправьте одно сообщение с фотографией или без.\n"
              "При необходимости отредактируйте его, затем нажмите кнопку "
@@ -246,14 +270,13 @@ def do_mailing(update: Update, context: CallbackContext):
 
     query.edit_message_reply_markup()
     query.message.reply_chat_action(ChatAction.TYPING)
-    content_message = content
-    users = api.get_admins()  # TODO: Заменить на get_users()
+    users = api.get_users()
     fails = []
     bot = context.bot
 
-    if content_message.photo:
-        photo = content_message.photo[-1].file_id,
-        caption = content_message.caption
+    if content.photo:
+        photo = content.photo[-1].file_id
+        caption = content.caption
         for user in users:
             try:
                 bot.send_photo(
@@ -265,7 +288,7 @@ def do_mailing(update: Update, context: CallbackContext):
                 fails.append(user)
                 continue
     else:
-        text = content_message.text
+        text = content.text
         for user in users:
             try:
                 bot.send_message(
@@ -289,7 +312,9 @@ def do_mailing(update: Update, context: CallbackContext):
 def register(dp: Dispatcher):
     dp.add_handler(CommandHandler("help", get_help, filters=is_admin))
     dp.add_handler(CommandHandler("admins", view_admins, filters=is_admin))
+    dp.add_handler(CommandHandler("users", view_users, filters=is_admin))
     dp.add_handler(CommandHandler("rates", total_rates, filters=is_admin))
+    dp.add_handler(CommandHandler("delete", delete_user, filters=is_admin))
 
     dp.add_handler(CommandHandler("user", view_user, filters=is_admin))
     dp.add_handler(CallbackQueryHandler(pattern=r"^admin:history:\d+$", callback=view_user_history))

@@ -9,7 +9,7 @@ from database.api import check_user, get_completed_orders
 from database.models import User, Order, Product
 from filters.cancel import cancel_filter
 import keyboards.profile as keyboards
-from utils.formatting import format_order, format_date
+from utils.formatting import format_order, format_date, format_user
 
 PHONE = 0
 ADDRESS = 0
@@ -18,12 +18,8 @@ ADDRESS = 0
 @check_user
 def user_profile(update: Update, context: CallbackContext):
     user = User.get(id=update.message.from_user.id)
-    status = "Пользователь" if user.status == "user" else "Администратор"
     update.message.reply_text(
-        text=f"{status} {str(user)}\n\n"
-             f"Телефон: <code>{user.phone}</code>\n"
-             f"Адрес: <code>{user.address}</code>\n\n"
-             f"Заказов: {len(get_completed_orders(user))}",
+        text=format_user(user),
         reply_markup=keyboards.profile_keyboard(user.id),
     )
 
