@@ -7,11 +7,12 @@ from peewee import DoesNotExist
 from .models import User, Order, Product
 
 
-def get_user(user_id: int = 0, username: str = None) -> Union[User, None]:
-    if not any((user_id, username)):
-        return None
+def get_user(identifier: Union[int, str]) -> Union[User, None]:
     try:
-        return User.get(id=user_id) if user_id else User.get(username=username.lower())
+        if isinstance(identifier, int) or identifier.isdigit():
+            return User.get(id=int(identifier))
+        else:
+            return User.get(username=identifier.lower())
     except DoesNotExist:
         return None
 
@@ -20,10 +21,8 @@ def check_user(handler):
     def wrapper(update: Update, context: CallbackContext):
         from_user = update.message.from_user if update.message else update.callback_query.from_user
 
-        if not get_user(user_id=from_user.id):
-            username = from_user.username.lower()
-            if not username:
-                username = ""
+        if not get_user(from_user.id):
+            username = from_user.username.lower() if from_user.username else ""
 
             User.create(
                 id=from_user.id,
@@ -39,6 +38,11 @@ def check_user(handler):
 
 def get_admins() -> List[User]:
     admins: List[User] = User.select().where(User.status == "admin")
+    return admins
+
+
+def get_users() -> List[User]:
+    admins: List[User] = User.select().where(User.status == "user")
     return admins
 
 

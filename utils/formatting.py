@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List
 
+from database.api import get_all_orders, get_completed_orders
 from database.models import Product, User
 
 
@@ -27,3 +28,16 @@ def format_order(user: User, products: List[Product], admin=False):
 
 def format_date(date: datetime, full=False):
     return date.strftime("%d.%m.%Y %H:%M") if full else date.strftime("%d.%m")
+
+
+def format_user(user: User, admin=False) -> str:
+    text = (
+        f"{'Пользователь' if user.status == 'user' else 'Администратор'} {user.name}\n",
+        f"ID: {str(user)}\n\n",
+        f"Дата регистрации: {format_date(user.joined, full=True)}\n" if admin else "",
+        f"Телефон: <code>{user.phone}</code>\n",
+        f"Адрес: <code>{user.address}</code>\n\n",
+        f"Всего заказов: {len(get_all_orders(user))}" if admin else f"Заказов: {len(get_completed_orders(user))}",
+    )
+
+    return "".join(text)
