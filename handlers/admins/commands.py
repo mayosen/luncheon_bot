@@ -270,7 +270,7 @@ def do_mailing(update: Update, context: CallbackContext):
 
     query.edit_message_reply_markup()
     query.message.reply_chat_action(ChatAction.TYPING)
-    users = api.get_users()
+    users = User.select()
     fails = []
     bot = context.bot
 
