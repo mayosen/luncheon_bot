@@ -1,8 +1,9 @@
 from datetime import datetime
 import peewee as pw
 
+from config import POSTGRES_USER, POSTGRES_PASSWORD
 
-db = pw.SqliteDatabase("database/database.sqlite3")
+db = pw.PostgresqlDatabase("lunch", user=POSTGRES_USER, password=POSTGRES_PASSWORD)
 
 
 class BaseModel(pw.Model):
@@ -53,3 +54,7 @@ class OrderItem(BaseModel):
     id = pw.AutoField()
     order = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
     product = pw.ForeignKeyField(Product, on_delete="CASCADE")
+
+
+if __name__ == "__main__":
+    db.create_tables([User, Order, Product, OrderItem])
