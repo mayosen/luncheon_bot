@@ -1,9 +1,14 @@
 from datetime import datetime
 import peewee as pw
 
-from config import POSTGRES_USER, POSTGRES_PASSWORD
+import config
 
-db = pw.PostgresqlDatabase("lunch", user=POSTGRES_USER, password=POSTGRES_PASSWORD)
+db = pw.PostgresqlDatabase(
+    database=config.POSTGRES_DATABASE,
+    host=config.POSTGRES_HOST,
+    user=config.POSTGRES_USER,
+    password=config.POSTGRES_PASSWORD,
+)
 
 
 class BaseModel(pw.Model):
