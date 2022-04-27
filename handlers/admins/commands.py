@@ -8,7 +8,7 @@ from telegram.ext import Dispatcher, CallbackContext, ConversationHandler, Messa
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
 import database.api as api
-from database.models import Order, User, Product
+from database.models import Order, User
 from filters import is_admin
 from filters.cancel import cancel_filter
 from .errors import ask_admins
@@ -99,7 +99,7 @@ def view_user(update: Update, context: CallbackContext):
 
 def view_user_history(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
+    query.edit_message_reply_markup()
     user_id = int(re.match(r"admin:history:(\d+)", query.data).group(1))
     user = User.get(id=user_id)
     orders = api.get_all_orders(user)
@@ -168,7 +168,7 @@ def view_order(update: Update, context: CallbackContext):
 
 
 def reply_with_order(message: Message, order: Order):
-    products: List[Product] = [item.product for item in order.items]
+    products = api.get_order_products(order)
     text = (
             f"Заказ <code>#{order.id}</code>\n"
             f"Пользователь: {order.user}\n"
@@ -270,7 +270,7 @@ def do_mailing(update: Update, context: CallbackContext):
 
     query.edit_message_reply_markup()
     query.message.reply_chat_action(ChatAction.TYPING)
-    users = api.get_users()
+    users = User.select()
     fails = []
     bot = context.bot
 

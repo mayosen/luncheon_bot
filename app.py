@@ -1,18 +1,18 @@
-from telegram import Bot
+from telegram.ext import CallbackContext
 
 from loader import updater
 import handlers
-from utils.startup import on_startup_notification, set_default_commands
+import utils.startup as utils
 
 
-def on_startup(bot: Bot):
-    set_default_commands(bot)
-    on_startup_notification(bot)
+def on_startup(context: CallbackContext):
+    bot = context.bot
+    utils.set_default_commands(bot)
+    utils.on_startup_notification(bot)
+    utils.clean_unprocessed_orders(bot)
 
 
 if __name__ == "__main__":
-    try:
-        on_startup(updater.bot)
-        updater.start_polling(drop_pending_updates=True)
-    finally:
-        pass
+    updater.job_queue.run_once(on_startup, 0)
+    updater.start_polling(drop_pending_updates=True)
+    updater.idle()
