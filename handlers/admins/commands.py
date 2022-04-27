@@ -8,7 +8,7 @@ from telegram.ext import Dispatcher, CallbackContext, ConversationHandler, Messa
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
 import database.api as api
-from database.models import Order, User, Product
+from database.models import Order, User
 from filters import is_admin
 from filters.cancel import cancel_filter
 from .errors import ask_admins
@@ -168,7 +168,7 @@ def view_order(update: Update, context: CallbackContext):
 
 
 def reply_with_order(message: Message, order: Order):
-    products: List[Product] = [item.product for item in order.items]
+    products = api.get_order_products(order)
     text = (
             f"Заказ <code>#{order.id}</code>\n"
             f"Пользователь: {order.user}\n"

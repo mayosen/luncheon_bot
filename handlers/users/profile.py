@@ -1,12 +1,11 @@
 import re
-from typing import List
 
 from telegram import Update, MessageEntity, Message
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
-from database.api import check_user, get_completed_orders
-from database.models import User, Order, Product
+from database.api import check_user, get_completed_orders, get_order_products
+from database.models import User, Order
 from filters.cancel import cancel_filter
 import keyboards.profile as keyboards
 from utils.formatting import format_order, format_date, format_user
@@ -62,7 +61,7 @@ def open_order(update: Update, context: CallbackContext):
     query.answer()
     order_id = int(re.match(r"user:order:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
-    products: List[Product] = [item.product for item in order.items]
+    products = get_order_products(order)
 
     text = (
         f"Заказ <code>#{order.id}</code>\n"

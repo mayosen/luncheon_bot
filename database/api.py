@@ -63,6 +63,11 @@ def get_order(order_id: int) -> Union[Order, None]:
         return None
 
 
+def get_order_products(order: Order) -> List[Product]:
+    products: List[Product] = [item.product for item in order.items]
+    return products
+
+
 def get_product(product_id: int) -> Union[Product, None]:
     try:
         return Product.get(id=product_id)

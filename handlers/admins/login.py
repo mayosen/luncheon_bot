@@ -4,9 +4,9 @@ from telegram.ext import Dispatcher, CallbackContext, CommandHandler
 from database.api import check_user
 from database.models import User
 from utils.literals import Info
-from config import ADMIN_PASSWORD
 from utils.startup import DEFAULT_COMMANDS
 from .commands import ADMIN_COMMANDS
+from config import ADMIN_PASSWORD
 
 
 @check_user
