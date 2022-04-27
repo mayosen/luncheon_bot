@@ -8,7 +8,7 @@ from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, C
 
 from filters.cancel import cancel_filter
 from database.models import User, Product, Order, OrderItem
-from database.api import check_user, get_admins
+from database.api import check_user, get_admins, get_order_products
 from keyboards.admin import approve_keyboard
 from keyboards.feedback import feedback_order_keyboard
 import keyboards.order as keyboards
@@ -53,7 +53,7 @@ def repeat_order(update: Update, context: CallbackContext):
     query = update.callback_query
     order_id = int(re.match(r"user:reorder:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
-    products: List[Product] = [item.product for item in order.items]
+    products = get_order_products(order)
     context.user_data["cart"] = products
     query.message.reply_text("Введите /cancel для отмены заказа.")
 

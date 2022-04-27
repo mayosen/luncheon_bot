@@ -60,12 +60,13 @@ def error_dispatcher(update: Union[object, Update], context: CallbackContext):
 
 
 def unauthorized(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    user = get_user(user_id)
-    admins = get_admins()
-    ask_admins(user, admins, context.bot)
-    context.user_data.clear()
-    context.bot_data.clear()
+    if update:
+        user_id = update.effective_user.id
+        user = get_user(user_id)
+        admins = get_admins()
+        ask_admins(user, admins, context.bot)
+        context.user_data.clear()
+        context.bot_data.clear()
 
 
 def ask_admins(user: User, admins: List[User], bot: Bot):
