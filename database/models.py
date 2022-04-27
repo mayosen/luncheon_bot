@@ -1,13 +1,13 @@
 from datetime import datetime
 import peewee as pw
 
-import config
+from config import POSTGRES
 
 db = pw.PostgresqlDatabase(
-    database=config.POSTGRES_DATABASE,
-    host=config.POSTGRES_HOST,
-    user=config.POSTGRES_USER,
-    password=config.POSTGRES_PASSWORD,
+    database=POSTGRES.database,
+    host=POSTGRES.host,
+    user=POSTGRES.user,
+    password=POSTGRES.password,
 )
 
 
