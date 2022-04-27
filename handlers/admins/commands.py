@@ -99,7 +99,7 @@ def view_user(update: Update, context: CallbackContext):
 
 def view_user_history(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
+    query.edit_message_reply_markup()
     user_id = int(re.match(r"admin:history:(\d+)", query.data).group(1))
     user = User.get(id=user_id)
     orders = api.get_all_orders(user)
