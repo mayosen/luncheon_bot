@@ -42,7 +42,7 @@ def error_dispatcher(update: Union[object, Update], context: CallbackContext):
         f"Исключение при работе бота.\n\n"
         f"<b>{exception.exception}</b>: {exception.message}\n"
         f"<b>args</b>: {exception.args}\n"
-        f"<b>user_data</b>: {exception.user_data}\n"
+        f"<b>user_data</b>: {exception.user_data.replace('<', '').replace('>', '')}"
     )
     update_info = "" if not exception.update_message \
         else (f"<b>Message</b>: {exception.update_message}\n"
