@@ -4,7 +4,7 @@
 ## Запуск
 1. Установите зависимости
 ```
-pip install - requirements.txt
+pip install -r requirements.txt
 ```
 2. Создайте переменные среды (через терминал или IDE)
 ```

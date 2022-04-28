@@ -6,6 +6,7 @@ from telegram.error import Unauthorized
 
 from database.api import get_admins, get_order_products
 from database.models import Order
+from handlers.admins.errors import ask_admins
 from keyboards.profile import order_keyboard
 from utils.formatting import format_order, format_date
 
@@ -31,6 +32,8 @@ def on_startup_notification(bot: Bot):
 
 def clean_unprocessed_orders(bot: Bot, order: Order = None):
     orders = [order] if order else Order.select().where(Order.status == "подтверждение")
+    admins = get_admins()
+
     for order in orders:
         order.status = "отклонен"
         order.feedback = "Заказ не обработан администратором"
@@ -44,12 +47,15 @@ def clean_unprocessed_orders(bot: Bot, order: Order = None):
                 + format_order(order, products)
         )
         feedback_exists = order.feedback and order.status != "отклонен"
+        markup = order_keyboard(order.id, feedback_exists) \
+            if order.status != "отклонен" else order_keyboard(order.id)
 
         try:
             bot.send_message(
                 chat_id=order.user.id,
                 text=text,
-                reply_markup=order_keyboard(order.id, feedback_exists),
+                reply_markup=markup,
             )
         except Unauthorized:
+            ask_admins(order.user, admins, bot)
             continue

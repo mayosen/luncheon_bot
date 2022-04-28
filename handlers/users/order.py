@@ -264,9 +264,10 @@ def order_action(update: Update, context: CallbackContext):
 
 
 def check_unprocessed_order(context: CallbackContext):
-    order = context.job.context
+    order_id = context.job.context
+    order = Order.get(id=order_id)
     if isinstance(order, Order) and order.status == "подтверждение":
-        clean_unprocessed_orders(context.bot, context.job.context)
+        clean_unprocessed_orders(context.bot, order)
 
 
 def create_order(query: CallbackQuery, context: CallbackContext):
@@ -292,7 +293,7 @@ def create_order(query: CallbackQuery, context: CallbackContext):
         f"Спасибо! Ваш заказ с номером <code>#{order.id}</code> принят в обработку.\n\n"
         f"Вам будут приходить уведомления об изменении его статуса."
     )
-    context.job_queue.run_once(check_unprocessed_order, 120, context=order)
+    context.job_queue.run_once(check_unprocessed_order, 120, context=order.id)
 
     admins = get_admins()
     text = (

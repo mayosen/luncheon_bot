@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -75,21 +75,25 @@ def order_history_keyboard(user_id: int, orders: List[Order], current_index: int
     return InlineKeyboardMarkup(keyboard)
 
 
-def order_keyboard(order_id: int, feedback_exists: bool) -> InlineKeyboardMarkup:
+def order_keyboard(order_id: int, feedback_exists: Union[None, bool] = None) -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton(
                 text="Повторить заказ",
                 callback_data=f"user:reorder:{order_id}",
             ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="Посмотреть отзыв" if feedback_exists else "Добавить отзыв",
-                callback_data=f"user:feedback:existing:{order_id}"
-                if feedback_exists else f"user:feedback:{order_id}",
-            ),
-        ],
+        ]
     ]
+
+    if feedback_exists is not None:
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text="Посмотреть отзыв" if feedback_exists else "Добавить отзыв",
+                    callback_data=f"user:feedback:existing:{order_id}"
+                    if feedback_exists else f"user:feedback:{order_id}",
+                ),
+            ]
+        )
 
     return InlineKeyboardMarkup(keyboard)
