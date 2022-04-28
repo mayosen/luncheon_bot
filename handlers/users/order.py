@@ -264,7 +264,9 @@ def order_action(update: Update, context: CallbackContext):
 
 
 def check_unprocessed_order(context: CallbackContext):
-    clean_unprocessed_orders(context.bot, context.job.context)
+    order = context.job.context
+    if isinstance(order, Order) and order.status == "подтверждение":
+        clean_unprocessed_orders(context.bot, context.job.context)
 
 
 def create_order(query: CallbackQuery, context: CallbackContext):
