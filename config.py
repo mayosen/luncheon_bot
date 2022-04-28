@@ -2,7 +2,17 @@ from os import environ
 
 
 class DatabaseUrl:
-    def __init__(self, url: str):
+    __slots__ = ("user", "password", "host", "port", "database")
+
+    def __init__(self, url: str = None):
+        if not url:
+            self.user = None
+            self.password = None
+            self.host = None
+            self.port = None
+            self.database = None
+            return
+
         url = url.removeprefix("postgres://")
         sep = url.find(":")
         self.user = url[:sep]
@@ -16,6 +26,12 @@ class DatabaseUrl:
         sep = url.find("/")
         self.port = url[:sep]
         self.database = url[sep + 1:]
+
+    def create_url(self):
+        return (
+                "postgres://" + self.user + ":" + self.password +
+                "@" + self.host + ":" + self.port + "/" + self.database
+        )
 
 
 TOKEN = environ.get("BOT_TOKEN")

@@ -8,7 +8,7 @@ from telegram.ext import Dispatcher, CallbackContext, CallbackQueryHandler
 from telegram.error import Unauthorized
 
 from database.api import get_admins, get_user
-from database.models import User
+from database.models import User, Log
 from keyboards.admin import block_user, user_profile_keyboard
 from utils.formatting import format_user
 
@@ -17,32 +17,37 @@ def error_dispatcher(update: Union[object, Update], context: CallbackContext):
     error = context.error
     logging.error(msg="Exception while handling an update:", exc_info=context.error)
 
-    if isinstance(error, Unauthorized):
-        unauthorized(update, context)
-        return
-
-    admins = get_admins()
-    trace = "<code>" + traceback.format_exc() + "</code>"
-    bot = context.bot
+    exception = Log.create(
+        exception=type(error).__name__,
+        message=str(error),
+        args=str(error.args),
+        traceback=traceback.format_exc(),
+        user_data=str(context.user_data),
+    )
 
     if isinstance(update, Update):
-        update_info = (
-            f"<b>Message</b>: <code>{update.effective_message.to_dict()}</code>\n"
-            f"<b>Chat</b>: <code>{update.effective_chat.to_dict()}</code>\n"
-            f"<b>User</b>: <code>{update.effective_user.to_dict()}</code>\n"
-        )
-    else:
-        update_info = ""
+        exception.update_message = str(update.effective_message.to_dict())
+        exception.update_chat = str(update.effective_chat.to_dict())
+        exception.update_user = str(update.effective_user.to_dict())
+        exception.save()
 
-    user_data = str(context.user_data).replace("<", "").replace(">", "")
-    chat_data = str(context.chat_data).replace("<", "").replace(">", "")
-    bot_data = str(context.bot_data).replace("<", "").replace(">", "")
-    text = (f"Исключение при работе бота.\n\n"
-            f"<b>{type(error).__name__}</b>: {error}\n"
-            f"<b>args</b>: {error.args}\n"
-            f"<b>user_data</b>: {user_data}\n"
-            f"<b>chat_data</b>: {chat_data}\n"
-            f"<b>bot_data</b>: {bot_data}")
+        if isinstance(error, Unauthorized):
+            unauthorized(update, context)
+            return
+
+    bot = context.bot
+    admins = get_admins()
+    trace = "<code>" + exception.traceback + "</code>"
+    text = (
+        f"Исключение при работе бота.\n\n"
+        f"<b>{exception.exception}</b>: {exception.message}\n"
+        f"<b>args</b>: {exception.args}\n"
+        f"<b>user_data</b>: {exception.user_data}\n"
+    )
+    update_info = "" if not exception.update_message \
+        else (f"<b>Message</b>: {exception.update_message}\n"
+              f"<b>Chat</b>: {exception.update_chat}\n"
+              f"<b>User</b>: {exception.update_user}")
 
     for admin in admins:
         bot.send_message(
