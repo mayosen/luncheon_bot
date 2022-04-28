@@ -45,19 +45,20 @@ def error_dispatcher(update: Union[object, Update], context: CallbackContext):
         f"<b>user_data</b>: {exception.user_data.replace('<', '').replace('>', '')}"
     )
     update_info = "" if not exception.update_message \
-        else (f"<b>Message</b>: {exception.update_message}\n"
-              f"<b>Chat</b>: {exception.update_chat}\n"
-              f"<b>User</b>: {exception.update_user}")
+        else (f"<b>Message</b>: <code>{exception.update_message}</code>\n\n"
+              f"<b>Chat</b>: <code>{exception.update_chat}</code>\n\n"
+              f"<b>User</b>: <code>{exception.update_user}</code>")
 
     for admin in admins:
         bot.send_message(
             chat_id=admin.id,
             text=text,
         )
-        bot.send_message(
-            chat_id=admin.id,
-            text=update_info,
-        )
+        if update_info:
+            bot.send_message(
+                chat_id=admin.id,
+                text=update_info,
+            )
         bot.send_message(
             chat_id=admin.id,
             text=trace,
