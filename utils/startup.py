@@ -29,8 +29,8 @@ def on_startup_notification(bot: Bot):
             continue
 
 
-def clean_unprocessed_orders(bot: Bot):
-    orders: List[Order] = Order.select().where(Order.status == "подтверждение")
+def clean_unprocessed_orders(bot: Bot, order: Order = None):
+    orders = [order] if order else Order.select().where(Order.status == "подтверждение")
     for order in orders:
         order.status = "отклонен"
         order.feedback = "Заказ не обработан администратором"

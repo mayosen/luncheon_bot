@@ -1,4 +1,5 @@
 from datetime import datetime
+from pytz import timezone
 import peewee as pw
 
 from config import POSTGRES
@@ -10,6 +11,10 @@ db = pw.PostgresqlDatabase(
     host=POSTGRES.host,
     port=POSTGRES.port,
 )
+
+
+def local_datetime_now():
+    return datetime.now(tz=timezone("Europe/Moscow"))
 
 
 class BaseModel(pw.Model):
@@ -24,7 +29,7 @@ class User(BaseModel):
     username = pw.CharField()
     address = pw.CharField(default="")
     phone = pw.CharField(default="")
-    joined = pw.DateTimeField(default=datetime.now)
+    joined = pw.DateTimeField(default=local_datetime_now)
 
     def __str__(self):
         return f"@{self.username}" if self.username else f"<code>{self.id}</code>"
@@ -36,7 +41,7 @@ class Order(BaseModel):
     user = pw.ForeignKeyField(User, backref="orders", on_delete="CASCADE")
     address = pw.CharField()
     phone = pw.CharField()
-    created = pw.DateTimeField()
+    created = pw.DateTimeField(default=local_datetime_now)
     rate = pw.IntegerField(default=0)
     feedback = pw.TextField(default="")
     attachments = pw.TextField(default="")
@@ -64,7 +69,7 @@ class OrderItem(BaseModel):
 
 class Log(BaseModel):
     id = pw.AutoField()
-    time = pw.DateTimeField(default=datetime.now)
+    time = pw.DateTimeField(default=local_datetime_now)
     exception = pw.CharField()
     message = pw.CharField()
     args = pw.CharField()

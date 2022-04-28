@@ -1,6 +1,5 @@
 import re
 from typing import List, Union, Dict
-from datetime import datetime
 
 from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPhoto
 from telegram.ext import Dispatcher, CallbackContext, Filters
@@ -12,6 +11,7 @@ from database.api import check_user, get_admins, get_order_products
 from keyboards.admin import approve_keyboard
 from keyboards.feedback import feedback_order_keyboard
 import keyboards.order as keyboards
+from utils.startup import clean_unprocessed_orders
 from .profile import incorrect_phone, update_phone, update_address
 from utils.formatting import format_order
 from utils.literals import OrderStates, OrderState
@@ -256,14 +256,18 @@ def order_action(update: Update, context: CallbackContext):
     action = query.data
 
     if action == "user:confirm":
-        return create_order(query, context.user_data)
+        return create_order(query, context)
     elif action == "user:reorder":
         return new_order(update, context)
     elif action == "user:cancel":
         return cancel_order(update, context)
 
 
-def create_order(query: CallbackQuery, user_data: Dict):
+def check_unprocessed_order(context: CallbackContext):
+    clean_unprocessed_orders(context.bot, context.job.context)
+
+
+def create_order(query: CallbackQuery, context: CallbackContext):
     user = User.get(id=query.from_user.id)
 
     order: Order = Order.create(
@@ -271,20 +275,22 @@ def create_order(query: CallbackQuery, user_data: Dict):
         user=user,
         address=user.address,
         phone=user.phone,
-        created=datetime.now(),
     )
 
-    products = user_data["cart"]
+    products = context.user_data["cart"]
     for product in products:
         OrderItem.create(
             order=order,
             product=product,
         )
 
+    context.user_data.clear()
     message = query.message
-    message.reply_text(f"Спасибо! Ваш заказ с номером <code>#{order.id}</code> принят в обработку.\n\n"
-                       f"Вам будут приходить уведомления об изменении его статуса.")
-    user_data.clear()
+    message.reply_text(
+        f"Спасибо! Ваш заказ с номером <code>#{order.id}</code> принят в обработку.\n\n"
+        f"Вам будут приходить уведомления об изменении его статуса."
+    )
+    context.job_queue.run_once(check_unprocessed_order, 120, context=order)
 
     admins = get_admins()
     text = (
