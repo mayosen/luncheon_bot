@@ -26,15 +26,13 @@ def user_profile(update: Update, context: CallbackContext):
 def order_history(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
-    user_id = query.from_user.id
-
-    user = User.get(id=user_id)
+    user = User.get(id=query.from_user.id)
     orders = get_completed_orders(user)
 
     if len(orders) > 0:
         query.message.reply_text(
             text=f"{query.from_user.full_name}, ваши заказы",
-            reply_markup=keyboards.order_history_keyboard(user_id, orders, 0),
+            reply_markup=keyboards.order_history_keyboard(user.id, orders, 0),
         )
     else:
         query.message.reply_text(f"{query.from_user.full_name}, вы не сделали ни одного заказа.")
@@ -62,17 +60,14 @@ def open_order(update: Update, context: CallbackContext):
     order_id = int(re.match(r"user:order:(\d+)", query.data).group(1))
     order = Order.get(id=order_id)
     products = get_order_products(order)
-
     text = (
         f"Заказ <code>#{order.id}</code>\n"
         f"Дата: {format_date(order.created, full=True)}\n\n"
         + format_order(order, products)
     )
-
-    feedback_exists = order.feedback and order.status != "отклонен"
     query.message.reply_text(
         text=text,
-        reply_markup=keyboards.order_keyboard(order_id, feedback_exists),
+        reply_markup=keyboards.order_keyboard(order_id, bool(order.feedback)),
     )
 
 

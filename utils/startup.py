@@ -38,7 +38,6 @@ def clean_unprocessed_orders(bot: Bot, order: Order = None):
         order.status = "отклонен"
         order.feedback = "Заказ не обработан администратором"
         order.save()
-
         products = get_order_products(order)
         text = (
                 f"Пожалуйста, повторите заказ <code>#{order.id}</code>\n"
@@ -46,15 +45,12 @@ def clean_unprocessed_orders(bot: Bot, order: Order = None):
                 f"Дата: {format_date(order.created, full=True)}\n\n"
                 + format_order(order, products)
         )
-        feedback_exists = order.feedback and order.status != "отклонен"
-        markup = order_keyboard(order.id, feedback_exists) \
-            if order.status != "отклонен" else order_keyboard(order.id)
 
         try:
             bot.send_message(
                 chat_id=order.user.id,
                 text=text,
-                reply_markup=markup,
+                reply_markup=order_keyboard(order.id),
             )
         except Unauthorized:
             ask_admins(order.user, admins, bot)
