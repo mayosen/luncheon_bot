@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -75,7 +75,7 @@ def order_history_keyboard(user_id: int, orders: List[Order], current_index: int
     return InlineKeyboardMarkup(keyboard)
 
 
-def order_keyboard(order_id: int, feedback_exists: Union[None, bool] = None) -> InlineKeyboardMarkup:
+def order_keyboard(order_id: int, feedback_exists: bool = None) -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton(
