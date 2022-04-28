@@ -1,8 +1,15 @@
 from datetime import datetime
 import peewee as pw
 
+from config import POSTGRES
 
-db = pw.SqliteDatabase("database/database.sqlite3")
+db = pw.PostgresqlDatabase(
+    database=POSTGRES.database,
+    user=POSTGRES.user,
+    password=POSTGRES.password,
+    host=POSTGRES.host,
+    port=POSTGRES.port,
+)
 
 
 class BaseModel(pw.Model):
@@ -53,3 +60,20 @@ class OrderItem(BaseModel):
     id = pw.AutoField()
     order = pw.ForeignKeyField(Order, backref="items", on_delete="CASCADE")
     product = pw.ForeignKeyField(Product, on_delete="CASCADE")
+
+
+class Log(BaseModel):
+    id = pw.AutoField()
+    time = pw.DateTimeField(default=datetime.now)
+    exception = pw.CharField()
+    message = pw.CharField()
+    args = pw.CharField()
+    traceback = pw.TextField()
+    user_data = pw.TextField()
+    update_message = pw.TextField(default="")
+    update_chat = pw.TextField(default="")
+    update_user = pw.TextField(default="")
+
+
+if __name__ == "__main__":
+    db.create_tables([User, Order, Product, OrderItem, Log])

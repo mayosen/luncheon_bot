@@ -16,6 +16,5 @@ venv.bak/
 .idea
 
 # Project
-config.py
 database.sqlite3
 *.csv
