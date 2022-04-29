@@ -1,4 +1,5 @@
 import re
+from statistics import mean
 from typing import List
 from collections import Counter
 
@@ -68,16 +69,18 @@ def view_users(update: Update, context: CallbackContext):
 def total_rates(update: Update, context: CallbackContext):
     total_orders: List[Order] = Order.select().where(Order.status == "выполнен")
     orders: List[Order] = Order.select().where(Order.rate != 0)
-    rate_counter = Counter([order.rate for order in orders])
+    rates = [order.rate for order in orders]
+    rate_counter = Counter(rates)
     rate_items = sorted(rate_counter.items())
     text = []
     for rate, count in rate_items:
-        text.append(f"\"<b>{rate}</b>\" - {count} заказов")
+        text.append(f"<b>{rate}</b> - {count} заказов")
 
     update.message.reply_text(
-        text=f"Выполненных заказов: {len(total_orders)}\n"
-             f"Оцененных заказов: {len(orders)}\n\n"
-             + "\n".join(text)
+        f"Выполненных заказов: {len(total_orders)}\n"
+        f"Оцененных заказов: {len(orders)}\n\n"
+        + "\n".join(text) +
+        f"\n\nСредняя оценка: <b>{mean(rates): .2f}</b>"
     )
 
 
