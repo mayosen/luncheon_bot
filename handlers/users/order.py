@@ -86,7 +86,7 @@ def switch_product(update: Update, context: CallbackContext):
     query.message.edit_media(
         media=InputMediaPhoto(
             media=product.photo,
-            caption=f"{product.title}\nЦена: <b>{product.price}</b> р.",
+            caption=f"{product.title}\nЦена: <b>{product.price} р.</b>",
         ),
         reply_markup=keyboards.product_keyboard(state.next_category, new_index, len(products)),
     )
@@ -104,7 +104,7 @@ def process_state(update: Union[Message, CallbackQuery], state: OrderState, user
     message.reply_text(f"Выберите {state.choose}.")
     message.reply_photo(
         photo=product.photo,
-        caption=f"{product.title}\nЦена: {product.price} р.",
+        caption=f"{product.title}\nЦена: <b>{product.price} р.</b>",
         reply_markup=keyboards.product_keyboard(state.next_category, index, len(products)),
     )
 
