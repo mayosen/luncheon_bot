@@ -293,7 +293,7 @@ def create_order(query: CallbackQuery, context: CallbackContext):
         f"Спасибо! Ваш заказ с номером <code>#{order.id}</code> принят в обработку.\n\n"
         f"Вам будут приходить уведомления об изменении его статуса."
     )
-    context.job_queue.run_once(check_unprocessed_order, 120, context=order.id)
+    context.job_queue.run_once(check_unprocessed_order, 120, context=order.id, name=f"check_order_{order.id}")
 
     admins = get_admins()
     text = (

@@ -2,6 +2,7 @@ import logging
 import re
 import traceback
 from typing import Union, List
+from json import dumps
 
 from telegram import Update, Bot
 from telegram.ext import Dispatcher, CallbackContext, CallbackQueryHandler
@@ -22,13 +23,13 @@ def error_dispatcher(update: Union[object, Update], context: CallbackContext):
         message=str(error),
         args=str(error.args),
         traceback=traceback.format_exc(),
-        user_data=str(context.user_data),
+        user_data=dumps(context.user_data, ensure_ascii=False, default=lambda item: str(item)),
     )
 
     if isinstance(update, Update):
-        exception.update_message = str(update.effective_message.to_dict())
-        exception.update_chat = str(update.effective_chat.to_dict())
-        exception.update_user = str(update.effective_user.to_dict())
+        exception.update_message = dumps(update.effective_message.to_dict(), ensure_ascii=False)
+        exception.update_chat = dumps(update.effective_chat.to_dict(), ensure_ascii=False)
+        exception.update_user = dumps(update.effective_user.to_dict(), ensure_ascii=False)
         exception.save()
 
         if isinstance(error, Unauthorized):
@@ -42,10 +43,10 @@ def error_dispatcher(update: Union[object, Update], context: CallbackContext):
         f"Исключение при работе бота.\n\n"
         f"<b>{exception.exception}</b>: {exception.message}\n"
         f"<b>args</b>: {exception.args}\n"
-        f"<b>user_data</b>: {exception.user_data.replace('<', '').replace('>', '')}"
+        f"<b>user_data</b>: <code>{exception.user_data.replace('<', '').replace('>', '')}</code>"
     )
     update_info = "" if not exception.update_message \
-        else (f"<b>Message</b>: <code>{exception.update_message}</code>\n\n"
+        else (f"<b>Message</b>: <code>{exception.update_message.replace('<', '').replace('>', '')}</code>\n\n"
               f"<b>Chat</b>: <code>{exception.update_chat}</code>\n\n"
               f"<b>User</b>: <code>{exception.update_user}</code>")
 
