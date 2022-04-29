@@ -1,5 +1,3 @@
-from typing import List
-
 from telegram import BotCommand
 from telegram import Bot
 from telegram.error import Unauthorized

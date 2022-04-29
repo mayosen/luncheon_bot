@@ -5,14 +5,14 @@ from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPh
 from telegram.ext import Dispatcher, CallbackContext, Filters
 from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, ConversationHandler
 
-from filters.cancel import cancel_filter
 from database.models import User, Product, Order, OrderItem
 from database.api import check_user, get_admins, get_order_products
+from filters.cancel import cancel_filter
+from handlers.users.profile import incorrect_phone, update_phone, update_address
 from keyboards.admin import approve_keyboard
 from keyboards.feedback import feedback_order_keyboard
 import keyboards.order as keyboards
 from utils.startup import clean_unprocessed_orders
-from .profile import incorrect_phone, update_phone, update_address
 from utils.formatting import format_order
 from utils.literals import OrderStates, OrderState
 

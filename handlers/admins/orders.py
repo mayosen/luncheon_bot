@@ -7,8 +7,8 @@ from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, C
 from filters.cancel import cancel_filter
 from database.models import Order, User
 from database.api import get_admins
-import keyboards.admin as keyboards
 from keyboards.order import rate_order_keyboard
+import keyboards.admin as keyboards
 
 REJECT = 0
 

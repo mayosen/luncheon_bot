@@ -20,6 +20,11 @@ DATABASE_URL = <Ссылка на базу данных>
 python app.py
 ```
 
+## Работа с базой данных
+При ручном добавлении данных нужно после импорта выполнить 
+`database/update.py`, для того чтобы обновить Postgres Sequence,
+который отвечает за автоматическое генерирование `id` в таблицах.
+
 ### Ссылки
 [`python-telegram-bot`](https://github.com/python-telegram-bot/python-telegram-bot) library:  
 - [Docs](https://python-telegram-bot.readthedocs.io/en/stable/index.html)
