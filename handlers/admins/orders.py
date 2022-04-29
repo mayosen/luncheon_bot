@@ -7,8 +7,8 @@ from telegram.ext import MessageHandler, CommandHandler, CallbackQueryHandler, C
 from filters.cancel import cancel_filter
 from database.models import Order, User
 from database.api import get_admins
-import keyboards.admin as keyboards
 from keyboards.order import rate_order_keyboard
+import keyboards.admin as keyboards
 
 REJECT = 0
 
@@ -20,7 +20,9 @@ def approve_order(update: Update, context: CallbackContext):
     order: Order = Order.get(id=order_id)
 
     if order.status != "подтверждение":
-        query.message.reply_text(f"Заказ <code>#{order_id}</code> обработан другим администратором.")
+        query.message.reply_text(
+            f"Заказ <code>#{order_id}</code> уже обработан, его статус: <b>{order.status}</b>"
+        )
         return
 
     order.status = "принят"
@@ -47,7 +49,9 @@ def reject_order(update: Update, context: CallbackContext):
     order: Order = Order.get(id=order_id)
 
     if order.status != "подтверждение":
-        query.message.reply_text(f"Заказ <code>#{order_id}</code> обработан другим администратором.")
+        query.message.reply_text(
+            f"Заказ <code>#{order_id}</code> уже обработан, его статус: <b>{order.status}</b>"
+        )
         return
 
     context.user_data["to_reject"] = order
@@ -61,8 +65,9 @@ def reject_order(update: Update, context: CallbackContext):
 
 
 def reject_reason(update: Update, context: CallbackContext):
-    order: Order = context.user_data["to_reject"]
-    del context.user_data["to_reject"]
+    user_data = context.user_data
+    order: Order = user_data["to_reject"]
+    user_data.clear()
     reason = update.message.text
     order.status = "отклонен"
     order.feedback = reason
@@ -80,8 +85,9 @@ def reject_reason(update: Update, context: CallbackContext):
 
 
 def cancel_reject(update: Update, context: CallbackContext):
-    order: Order = context.user_data["to_reject"]
-    del context.user_data["to_reject"]
+    user_data = context.user_data
+    order: Order = user_data["to_reject"]
+    user_data.clear()
 
     if len(get_admins()) <= 1:
         order.status = "отклонен"

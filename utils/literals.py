@@ -14,6 +14,9 @@ class OrderState:
         self.choose = choose
         self.next_category = next_category
 
+    def __repr__(self):
+        return f"<OrderState: {self.category}, {self.choose}, {self.next_category}>"
+
 
 class OrderStates:
     MAIN_DISH = OrderState("main_dish", "основное блюдо", "Закуски")
