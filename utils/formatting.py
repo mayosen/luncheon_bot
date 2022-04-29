@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime
 from typing import List
 
@@ -6,8 +7,14 @@ from database.models import Product, User
 
 
 def format_items(products: List[Product], admin=False):
-    positions = [f"[id: {product.id}] {product}" for product in products] if admin \
-            else [f"- {product}" for product in products]
+    counted = Counter(products)
+    positions = []
+
+    for product, rate in counted.items():
+        text = f"[id: {product.id}] {product}" if admin else f"- {product}"
+        if rate > 1:
+            text += f" <b>x{rate}</b>"
+        positions.append(text)
 
     formatted = "\n".join(positions)
     cost = sum([product.price for product in products])
