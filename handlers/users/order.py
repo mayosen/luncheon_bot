@@ -72,14 +72,14 @@ def switch_product(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
     data = re.match(r"user:index:(\w+)", query.data).group(1)
+    user_data = context.user_data
 
-    if data == "pass":
+    if data == "pass" or int(data) == user_data["current_index"]:
         query.answer()
         return
-    else:
-        new_index = int(data)
 
-    user_data = context.user_data
+    new_index = int(data)
+    user_data["current_index"] = new_index
     products = user_data["cache"]
     product = products[new_index]
     state: OrderState = user_data["state"]
@@ -99,8 +99,7 @@ def process_state(update: Union[Message, CallbackQuery], state: OrderState, user
     products: List[Product] = Product.select().where(Product.category == state.category)
     user_data["cache"] = products
     user_data["state"] = state
-
-    index = 0
+    user_data["current_index"] = index = 0
     product = products[index]
 
     message.reply_text(f"Выберите {state.choose}.")

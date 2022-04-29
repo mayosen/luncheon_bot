@@ -65,8 +65,9 @@ def reject_order(update: Update, context: CallbackContext):
 
 
 def reject_reason(update: Update, context: CallbackContext):
-    order: Order = context.user_data["to_reject"]
-    del context.user_data["to_reject"]
+    user_data = context.user_data
+    order: Order = user_data["to_reject"]
+    user_data.clear()
     reason = update.message.text
     order.status = "отклонен"
     order.feedback = reason
@@ -84,8 +85,9 @@ def reject_reason(update: Update, context: CallbackContext):
 
 
 def cancel_reject(update: Update, context: CallbackContext):
-    order: Order = context.user_data["to_reject"]
-    del context.user_data["to_reject"]
+    user_data = context.user_data
+    order: Order = user_data["to_reject"]
+    user_data.clear()
 
     if len(get_admins()) <= 1:
         order.status = "отклонен"
