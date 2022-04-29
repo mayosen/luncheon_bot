@@ -30,7 +30,6 @@ def on_startup_notification(bot: Bot):
 
 def clean_unprocessed_orders(bot: Bot, order: Order = None):
     orders = [order] if order else Order.select().where(Order.status == "подтверждение")
-    admins = get_admins()
 
     for order in orders:
         order.status = "отклонен"
@@ -51,5 +50,5 @@ def clean_unprocessed_orders(bot: Bot, order: Order = None):
                 reply_markup=order_keyboard(order.id),
             )
         except Unauthorized:
-            ask_admins(order.user, admins, bot)
+            ask_admins(order.user, bot)
             continue

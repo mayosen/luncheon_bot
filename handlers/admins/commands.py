@@ -304,10 +304,9 @@ def do_mailing(update: Update, context: CallbackContext):
 
     context.user_data.clear()
     query.message.reply_text(f"Рассылка закончена.\nНеудач при отправке: {len(fails)}")
-    admins = api.get_admins()
 
     for user in fails:
-        ask_admins(user, admins, bot)
+        ask_admins(user, bot)
 
     return ConversationHandler.END
 

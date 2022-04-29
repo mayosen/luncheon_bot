@@ -1,7 +1,7 @@
 import logging
 import re
 import traceback
-from typing import Union, List
+from typing import Union
 from json import dumps
 
 from telegram import Update, Bot
@@ -67,16 +67,15 @@ def error_dispatcher(update: Union[object, Update], context: CallbackContext):
 
 
 def unauthorized(update: Update, context: CallbackContext):
-    if update:
-        user_id = update.effective_user.id
-        user = get_user(user_id)
-        admins = get_admins()
-        ask_admins(user, admins, context.bot)
-        context.user_data.clear()
-        context.bot_data.clear()
+    user_id = update.effective_user.id
+    user = get_user(user_id)
+    ask_admins(user, context.bot)
+    context.user_data.clear()
 
 
-def ask_admins(user: User, admins: List[User], bot: Bot):
+def ask_admins(user: User, bot: Bot):
+    admins = get_admins()
+
     for admin in admins:
         bot.send_message(
             chat_id=admin.id,
