@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import CallbackContext
 from peewee import DoesNotExist
 
-from models import User, Order, Product
+from database.models import User, Order, Product
 
 
 def get_user(identifier: Union[int, str]) -> Union[User, None]:
