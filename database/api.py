@@ -19,17 +19,19 @@ def get_user(identifier: Union[int, str]) -> Union[User, None]:
 
 def check_user(handler):
     def wrapper(update: Update, context: CallbackContext):
-        from_user = update.message.from_user if update.message else update.callback_query.from_user
+        user = update.effective_user
+        existing_user = get_user(user.id)
 
-        if not get_user(from_user.id):
-            username = from_user.username.lower() if from_user.username else ""
-
+        if not existing_user:
             User.create(
-                id=from_user.id,
+                id=user.id,
                 status="user",
-                name=from_user.full_name,
-                username=username,
+                name=user.full_name,
+                username=user.username.lower() if user.username else "",
             )
+        elif existing_user.name != user.full_name:
+            existing_user.name = user.full_name
+            existing_user.save()
 
         return handler(update, context)
 

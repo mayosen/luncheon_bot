@@ -1,5 +1,5 @@
 import re
-from typing import List, Union, Dict
+from typing import List, Dict
 
 from telegram import Update, Message, MessageEntity, CallbackQuery, InputMediaPhoto
 from telegram.ext import Dispatcher, CallbackContext, Filters
@@ -23,15 +23,9 @@ MAIN_DISH, SNACK, DRINK, PHONE, ADDRESS, CONFIRM = range(6)
 def new_order(update: Update, context: CallbackContext):
     user_data = context.user_data
     user_data["cart"] = []
-
-    if update.callback_query:
-        message = update.callback_query.message
-        to_process = update.callback_query
-    else:
-        message = update.message
-        to_process = update.message
-
+    message = update.effective_message
     admins = get_admins()
+
     if not admins:
         message.reply_text("Извините, на данный момент нет активных администраторов, которые могут "
                            "принять ваш заказ.\n\nПожалуйста, вернитесь позднее.")
@@ -44,7 +38,7 @@ def new_order(update: Update, context: CallbackContext):
         "- напиток\n\n"
         "/cancel - отменить заказ"
     )
-    process_state(to_process, OrderStates.MAIN_DISH, context.user_data)
+    process_state(message, OrderStates.MAIN_DISH, context.user_data)
 
     return MAIN_DISH
 
@@ -92,9 +86,7 @@ def switch_product(update: Update, context: CallbackContext):
     )
 
 
-def process_state(update: Union[Message, CallbackQuery], state: OrderState, user_data: Dict):
-    message = update.message if isinstance(update, CallbackQuery) else update
-
+def process_state(message: Message, state: OrderState, user_data: Dict):
     products: List[Product] = Product.select().where(Product.category == state.category)
     user_data["cache"] = products
     user_data["state"] = state
@@ -122,7 +114,7 @@ def add_to_cart(update: Update, context: CallbackContext):
 def ask_snack(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
-    process_state(query, OrderStates.SNACK, context.user_data)
+    process_state(query.message, OrderStates.SNACK, context.user_data)
 
     return SNACK
 
@@ -130,7 +122,7 @@ def ask_snack(update: Update, context: CallbackContext):
 def ask_drink(update: Update, context: CallbackContext):
     query = update.callback_query
     query.edit_message_reply_markup()
-    process_state(query, OrderStates.DRINK, context.user_data)
+    process_state(query.message, OrderStates.DRINK, context.user_data)
 
     return DRINK
 
@@ -222,7 +214,7 @@ def use_last_address(update: Update, context: CallbackContext):
     query.edit_message_reply_markup()
     user = User.get(id=query.from_user.id)
 
-    return validate_order(query, user, context.user_data)
+    return validate_order(query.message, user, context.user_data)
 
 
 def get_address(update: Update, context: CallbackContext):
@@ -232,14 +224,11 @@ def get_address(update: Update, context: CallbackContext):
     return validate_order(message, user, context.user_data)
 
 
-def validate_order(update: Union[Message, CallbackQuery], user: User, user_data: Dict):
-    message = update if isinstance(update, Message) else update.message
+def validate_order(message: Message, user: User, user_data: Dict):
     products: List[Product] = user_data["cart"]
-
     text = (
-        f"{update.from_user.full_name}, Ваш заказ\n\n" + format_order(user, products)
+        f"{user.name}, Ваш заказ\n\n" + format_order(user, products)
     )
-
     message.reply_text(
         text=text,
         reply_markup=keyboards.order_action_keyboard(),
