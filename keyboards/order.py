@@ -3,9 +3,6 @@ from utils.literals import Symbols
 
 
 def product_keyboard(next_category: str, index: int, products_len: int) -> InlineKeyboardMarkup:
-    left_border = (index == 0)
-    right_border = (index == products_len - 1)
-
     buttons = [
         [
             InlineKeyboardButton(
@@ -16,17 +13,17 @@ def product_keyboard(next_category: str, index: int, products_len: int) -> Inlin
         [
             InlineKeyboardButton(
                 text="Добавить в корзину",
-                callback_data=f"user:cart:{index}"
+                callback_data=f"user:cart:{index}",
             ),
         ],
         [
             InlineKeyboardButton(
-                text=Symbols.BORDER if left_border else Symbols.PREVIOUS,
-                callback_data="user:index:" + ("pass" if left_border else f"{index - 1}"),
+                text=Symbols.PREVIOUS,
+                callback_data=f"user:index:{products_len - 1 if (index == 0) else index - 1}",
             ),
             InlineKeyboardButton(
-                text=Symbols.BORDER if right_border else Symbols.NEXT,
-                callback_data="user:index:" + ("pass" if right_border else f"{index + 1}"),
+                text=Symbols.NEXT,
+                callback_data=f"user:index:{0 if (index == products_len - 1) else index + 1}",
             ),
         ],
     ]

@@ -71,14 +71,13 @@ def cancel_order(update: Update, context: CallbackContext):
 def switch_product(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
-    data = re.match(r"user:index:(\w+)", query.data).group(1)
     user_data = context.user_data
+    new_index = int(re.match(r"user:index:(\d+)", query.data).group(1))
 
-    if data == "pass" or int(data) == user_data["current_index"]:
+    if new_index == user_data["current_index"]:
         query.answer()
         return
 
-    new_index = int(data)
     user_data["current_index"] = new_index
     products = user_data["cache"]
     product = products[new_index]
@@ -87,7 +86,7 @@ def switch_product(update: Update, context: CallbackContext):
     query.message.edit_media(
         media=InputMediaPhoto(
             media=product.photo,
-            caption=f"{product.title}\nЦена: {product.price} р.",
+            caption=f"{product.title}\nЦена: <b>{product.price}</b> р.",
         ),
         reply_markup=keyboards.product_keyboard(state.next_category, new_index, len(products)),
     )
@@ -343,17 +342,17 @@ def register(dp: Dispatcher):
         ],
         states={
             MAIN_DISH: [
-                CallbackQueryHandler(pattern=r"^user:index:(\d+|pass)$", callback=switch_product),
+                CallbackQueryHandler(pattern=r"^user:index:\d+$", callback=switch_product),
                 CallbackQueryHandler(pattern=r"^user:cart:\d+$", callback=add_to_cart),
                 CallbackQueryHandler(pattern=r"^user:next_state$", callback=ask_snack),
             ],
             SNACK: [
-                CallbackQueryHandler(pattern=r"^user:index:(\d+|pass)$", callback=switch_product),
+                CallbackQueryHandler(pattern=r"^user:index:\d+$", callback=switch_product),
                 CallbackQueryHandler(pattern=r"^user:cart:\d+$", callback=add_to_cart),
                 CallbackQueryHandler(pattern=r"^user:next_state$", callback=ask_drink),
             ],
             DRINK: [
-                CallbackQueryHandler(pattern=r"^user:index:(\d+|pass)$", callback=switch_product),
+                CallbackQueryHandler(pattern=r"^user:index:\d+$", callback=switch_product),
                 CallbackQueryHandler(pattern=r"^user:cart:\d+$", callback=add_to_cart),
                 CallbackQueryHandler(pattern=r"^user:next_state$", callback=complete_cart),
                 CallbackQueryHandler(pattern=r"^user:(reorder|cancel)$", callback=order_action),
