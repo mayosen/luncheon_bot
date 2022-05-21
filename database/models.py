@@ -10,6 +10,7 @@ db = pw.PostgresqlDatabase(
     password=POSTGRES.password,
     host=POSTGRES.host,
     port=POSTGRES.port,
+    autorollback=True,
 )
 
 
